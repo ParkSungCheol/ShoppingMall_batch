@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class BatchApplication {
 
 	public static void main(String[] args) {
+		System.out.println("test");
 		SpringApplication.run(BatchApplication.class, args);
 	}
 
