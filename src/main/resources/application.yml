@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    url: jdbc:log4jdbc:mysql://13.124.168.134:3307/shoppingMall?&serverTimezone=UTC&autoReconnect=true&allowMultiQueries=true&characterEncoding=UTF-8
+    username: root
+    password: 1q2w3e4r!@#$
+    mapper-locations: classpath:/Mapper/**/*.xml
+    
+logging:
+  level:
+    jdbc:
+      sqlonly: off
+      sqltiming: off
+      resultsettable: off
+      audit: off
+      resultset: off
+      connection: off
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+  config-location: classpath:/mybatis/mybatis-config.xml
