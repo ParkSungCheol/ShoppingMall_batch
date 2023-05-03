@@ -1,5 +1,8 @@
 package com.example.batch.tasklet;
 
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.StepContribution;
@@ -15,7 +18,11 @@ public class TestTasklet implements Tasklet {
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        log.info(">>> executed tasklet !!");
+        String url = "https://search.shopping.naver.com/search/all?query=해피머니";
+        Document doc = Jsoup.connect(url).get();
+        
+        Elements elem = doc.select("div.basicList_title__VfX3c");
+        log.info(elem.toString());
         return RepeatStatus.FINISHED;
     }
 }
