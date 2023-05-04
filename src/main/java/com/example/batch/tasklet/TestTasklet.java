@@ -41,7 +41,7 @@ public class TestTasklet implements Tasklet {
         while (true) {
             js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
             try {
-                Thread.sleep(2000); // 2초 대기
+                Thread.sleep(1000); // 1초 대기
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -55,11 +55,11 @@ public class TestTasklet implements Tasklet {
     
     private static void crawling(WebDriver driver, Logger log, int pageNumber) {
     	log.info("Current PageNumber : " + pageNumber);
-    	// 5. 페이지 로딩을 위한 최대 5초 대기
-        driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+    	// 5. 페이지 로딩을 위한 최대 1초 대기
+        driver.manage().timeouts().implicitlyWait(100, TimeUnit.MILLISECONDS);
         
-        // 6. 조회, 로드될 때까지 최대 10초 대기
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        // 6. 조회, 로드될 때까지 최대 5초 대기
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(1));
         
         infiniteScroll(driver);
         
@@ -122,7 +122,7 @@ public class TestTasklet implements Tasklet {
             pageNumber++;
             crawling(driver, log, pageNumber);
             try {
-                Thread.sleep(2000); // 2초 대기
+                Thread.sleep(1000); // 1초 대기
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -132,7 +132,7 @@ public class TestTasklet implements Tasklet {
     private static WebElement findNextButton(WebDriver driver) {
         // TODO: 다음 버튼을 찾아서 반환하는 코드 작성
     	String byFunKey = "CSSSELECTOR";
-    	WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    	WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(1));
     	String selectString = "div#container > div > div#content > div > div:nth-of-type(4) > a:last-of-type";
     	WebElement target = wait.until(ExpectedConditions.presenceOfElementLocated( 
                 byFunKey.equals("XPATH") ? By.xpath(selectString) : By.cssSelector(selectString) ));
@@ -154,6 +154,7 @@ public class TestTasklet implements Tasklet {
         options.addArguments("--disable-gpu");              // GPU를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
         options.addArguments("--no-sandbox");               // Sandbox 프로세스를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
         options.addArguments("--disable-popup-blocking");    // 팝업 무시
+        options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
         options.addArguments("--disable-default-apps");     // 기본앱 사용안함
         
         // 3. WebDriver 객체 생성
