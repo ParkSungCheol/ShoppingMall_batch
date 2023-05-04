@@ -65,7 +65,7 @@ public class TestTasklet implements Tasklet {
             // 6. 조회, 로드될 때까지 최대 10초 대기
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             String byFunKey = "CSSSELECTOR";
-            String selectString = "div.list_basis div div:nth-child(6) div div div:nth-child(2)";
+            String selectString = "div.list_basis > div:nth-child(1)";
 //            String byFunKey = "XPATH";
 //            String selectString = "//*[@id=\"mArticle\"]/div[2]/ul/li[3]/a";
             WebElement parent = wait.until(ExpectedConditions.presenceOfElementLocated( 
@@ -73,29 +73,18 @@ public class TestTasklet implements Tasklet {
 //            log.info("#### innerHTML : \n" + parent.getAttribute("innerHTML"));
             
             // 7. 콘텐츠 조회
-            List<WebElement> bestContests = parent.findElements(By.cssSelector("div.section_best > ul > li > a"));
-            log.info( "best 콘텐츠 수 : " + bestContests.size() );
+            List<WebElement> bestContests = parent.findElements(By.xpath("*"));
+            log.info( "등록된 상품 수 : " + bestContests.size() );
             if (bestContests.size() > 0) {
                 for (WebElement best : bestContests) {
-                    String title = best.findElement(By.cssSelector("div.wrap_cont > strong > span")).getText();
-                    String name = best.findElement(By.cssSelector("div.info_g > span.txt_id")).getText();
-                    log.info("Best title / blog name : " + title + " / " + name);
-                    log.info("Best url : " + best.getAttribute("href"));
+                    String title = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > a:nth-child(1)")).getText();
+                    log.info("title : " + title);
+                    String price = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(2) > span:nth-child(1) > span:nth-child(1) > span:nth-child(1)")).getText();
+                    log.info("price : " + price);
                 }
             }
             
-            log.info("########################################");
-            
-            List<WebElement> contents = parent.findElements(By.cssSelector("div.section_list > ul > li > a"));
-            log.info( "조회된 콘텐츠 수 : " + contents.size() );
-            if( contents.size() > 0 ) {
-                for(WebElement content : contents ) {
-                    String title = content.findElement(By.cssSelector("div.wrap_cont > strong > span")).getText();
-                    String name = content.findElement(By.cssSelector("div.info_g > span.txt_id")).getText();
-                    log.info("콘텐츠 title / blog name : " + title + " / " + name);
-                    log.info("콘텐츠 url : " + content.getAttribute("href"));
-                }
-            }
+            log.info("#### crawling END ####");
             
         } catch ( TimeoutException e ) {
             e.printStackTrace();
@@ -108,6 +97,6 @@ public class TestTasklet implements Tasklet {
         // 8. WebDriver 종료
         driver.quit();
         
-        log.info("#### END ####");
+        log.info("#### driver END ####");
     }
 }
