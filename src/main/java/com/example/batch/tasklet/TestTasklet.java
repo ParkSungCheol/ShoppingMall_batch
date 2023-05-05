@@ -27,6 +27,8 @@ import org.springframework.stereotype.Component;
 public class TestTasklet implements Tasklet {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
+    private static int totalSize = 0;
+    private static int totalSkippedSize = 0;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -74,6 +76,7 @@ public class TestTasklet implements Tasklet {
         // 7. 콘텐츠 조회
         List<WebElement> bestContests = parent.findElements(By.xpath("*"));
         log.info( "등록된 상품 수 : " + bestContests.size() );
+        totalSize += bestContests.size();
         int skippedCount = 0;
         if (bestContests.size() > 0) {
             for (WebElement best : bestContests) {
@@ -91,6 +94,7 @@ public class TestTasklet implements Tasklet {
             	}
             	catch(NoSuchElementException e) {
             		skippedCount++;
+            		totalSkippedSize++;
             		continue;
             	}
             	catch(Exception e) {
@@ -114,6 +118,7 @@ public class TestTasklet implements Tasklet {
             	// 8. WebDriver 종료
                 driver.quit();
                 
+                log.info("totalSize : " + totalSize + ", insertedSize : " + (totalSize - totalSkippedSize) +", totalSkippedSize : " + totalSkippedSize);
                 log.info("#### driver END ####");
                 
                 break;
