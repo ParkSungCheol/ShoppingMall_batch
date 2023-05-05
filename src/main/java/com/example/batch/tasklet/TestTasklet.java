@@ -83,10 +83,13 @@ public class TestTasklet implements Tasklet {
             	try {
                     String[] titles = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > a:nth-child(1)")).getText().split("\n");
                     log.info("title : " + titles[0]);
-                    String[] prices = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(2) > span:nth-child(1)")).getText().split("\n");
+//                    String[] prices = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(2) > span:nth-child(1)")).getText().split("\n");
+                    String[] prices = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(1) > span:nth-child(1)")).getText().split("\n");
                     log.info("price : " + prices[0]);
-                    String[] deliveryFees = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(2) > span:nth-child(1)")).getText().split("\n");
-                    log.info("deliveryFee : " + deliveryFees[2]);
+//                    String[] deliveryFees = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(2) > span:nth-child(1)")).getText().split("\n");
+                    String[] deliveryFees = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(1) > span:nth-child(1)")).getText().split("\n");
+                    if(deliveryFees.length > 1) log.info("deliveryFee : " + deliveryFees[2]);
+                    else log.info("deliveryFee : 별도확인필요");
                     String[] sellers = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > a:nth-child(1)")).getText().split("\n");
                     log.info("seller : " + (sellers[0].equals("")? "네이버쇼핑" : sellers[0]));
                     String url = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > a:nth-child(1)")).getAttribute("href");
