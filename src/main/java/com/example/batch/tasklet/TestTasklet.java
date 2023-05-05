@@ -21,19 +21,49 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
-import org.springframework.stereotype.Component;
 
-@Component
+import com.example.batch.Domain.BatchSchedule;
+
 public class TestTasklet implements Tasklet {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
-    private static int totalSize = 0;
-    private static int totalSkippedSize = 0;
+    private static int totalSize;
+    private static int totalSkippedSize;
+    private static BatchSchedule batchSchedule = null;
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-        String url = "https://search.shopping.naver.com/search/all?query=해피머니";
-        runSelenium(url, log);
+    	batchSchedule = new BatchSchedule();
+    	batchSchedule.setBatchName((String) chunkContext.getStepContext().getJobParameters().get("batchName"));
+    	batchSchedule.setUrl((String) chunkContext.getStepContext().getJobParameters().get("url"));
+    	batchSchedule.setTotalSelector((String) chunkContext.getStepContext().getJobParameters().get("totalSelector"));
+    	batchSchedule.setTitleSelector1((String) chunkContext.getStepContext().getJobParameters().get("titleSelector1"));
+    	batchSchedule.setTitleSelector2((String) chunkContext.getStepContext().getJobParameters().get("titleSelector2"));
+    	batchSchedule.setTitleSelector3((String) chunkContext.getStepContext().getJobParameters().get("titleSelector3"));
+    	batchSchedule.setTitleLocation(chunkContext.getStepContext().getJobParameters().get("titleLocation") != null? Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("titleLocation")) : 0);
+    	batchSchedule.setPriceSelector1((String) chunkContext.getStepContext().getJobParameters().get("priceSelector1"));
+    	batchSchedule.setPriceSelector2((String) chunkContext.getStepContext().getJobParameters().get("priceSelector2"));
+    	batchSchedule.setPriceSelector3((String) chunkContext.getStepContext().getJobParameters().get("priceSelector3"));
+    	batchSchedule.setPriceLocation(chunkContext.getStepContext().getJobParameters().get("priceLocation") != null? Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("priceLocation")) : 0);
+    	batchSchedule.setDeliveryFeeSelector1((String) chunkContext.getStepContext().getJobParameters().get("deliveryFeeSelector1"));
+    	batchSchedule.setDeliveryFeeSelector2((String) chunkContext.getStepContext().getJobParameters().get("deliveryFeeSelector2"));
+    	batchSchedule.setDeliveryFeeSelector3((String) chunkContext.getStepContext().getJobParameters().get("deliveryFeeSelector3"));
+    	batchSchedule.setDeliveryFeeLocation(chunkContext.getStepContext().getJobParameters().get("deliveryFeeLocation") != null? Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("deliveryFeeLocation")) : 0);
+    	batchSchedule.setSellerSelector1((String) chunkContext.getStepContext().getJobParameters().get("sellerSelector1"));
+    	batchSchedule.setSellerSelector2((String) chunkContext.getStepContext().getJobParameters().get("sellerSelector2"));
+    	batchSchedule.setSellerSelector3((String) chunkContext.getStepContext().getJobParameters().get("sellerSelector3"));
+    	batchSchedule.setSellerLocation(chunkContext.getStepContext().getJobParameters().get("sellerLocation") != null? Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("sellerLocation")) : 0);
+    	batchSchedule.setUrlSelector1((String) chunkContext.getStepContext().getJobParameters().get("urlSelector1"));
+    	batchSchedule.setUrlSelector2((String) chunkContext.getStepContext().getJobParameters().get("urlSelector2"));
+    	batchSchedule.setUrlSelector3((String) chunkContext.getStepContext().getJobParameters().get("urlSelector3"));
+    	batchSchedule.setNextButtonSelector((String) chunkContext.getStepContext().getJobParameters().get("nextButtonSelector"));
+    	
+    	log.info("url : " + batchSchedule.getUrl());
+    	if(batchSchedule.getUrl() != null && !batchSchedule.getUrl().equals("")) {
+    		totalSize = 0;
+    		totalSkippedSize = 0;
+    		runSelenium(log);
+    	}
         return RepeatStatus.FINISHED;
     }
     
@@ -66,7 +96,7 @@ public class TestTasklet implements Tasklet {
         infiniteScroll(driver);
         
         String byFunKey = "CSSSELECTOR";
-        String selectString = "div.list_basis > div:nth-child(1)";
+        String selectString = batchSchedule.getTotalSelector();
 //            String byFunKey = "XPATH";
 //            String selectString = "//*[@id=\"mArticle\"]/div[2]/ul/li[3]/a";
         WebElement parent = wait.until(ExpectedConditions.presenceOfElementLocated( 
@@ -81,28 +111,60 @@ public class TestTasklet implements Tasklet {
         if (bestContests.size() > 0) {
             for (WebElement best : bestContests) {
             	try {
-                    String[] titles = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > a:nth-child(1)")).getText().split("\n");
-                    log.info("title : " + titles[0]);
-//                    String[] prices = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(2) > span:nth-child(1)")).getText().split("\n");
-                    String[] prices = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(1) > span:nth-child(1)")).getText().split("\n");
-                    log.info("price : " + prices[0]);
-//                    String[] deliveryFees = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(2) > span:nth-child(1)")).getText().split("\n");
-                    String[] deliveryFees = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > strong:nth-child(1) > span:nth-child(1)")).getText().split("\n");
-                    if(deliveryFees.length > 1) log.info("deliveryFee : " + deliveryFees[2]);
-                    else log.info("deliveryFee : 별도확인필요");
-                    String[] sellers = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > a:nth-child(1)")).getText().split("\n");
-                    log.info("seller : " + (sellers[0].equals("")? "네이버쇼핑" : sellers[0]));
-                    String url = best.findElement(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > a:nth-child(1)")).getAttribute("href");
+            		List<WebElement> title = best.findElements(By.cssSelector(batchSchedule.getTitleSelector1()));
+                    if(title.size() == 0 && batchSchedule.getTitleSelector2() != null &&!batchSchedule.getTitleSelector2().equals("")) title = best.findElements(By.cssSelector(batchSchedule.getTitleSelector2()));
+                    if(title.size() == 0 && batchSchedule.getTitleSelector3() != null &&!batchSchedule.getTitleSelector3().equals("")) title = best.findElements(By.cssSelector(batchSchedule.getTitleSelector3()));
+                    String[] titles = title.get(0).getText().split("\n");
+                    log.info("title : " + titles[batchSchedule.getTitleLocation()]);
+                    
+                    List<WebElement> price = best.findElements(By.cssSelector(batchSchedule.getPriceSelector1()));
+                    if(price.size() == 0 && batchSchedule.getPriceSelector2() != null &&!batchSchedule.getPriceSelector2().equals("")) price = best.findElements(By.cssSelector(batchSchedule.getPriceSelector2()));
+                    if(price.size() == 0 && batchSchedule.getPriceSelector3() != null &&!batchSchedule.getPriceSelector3().equals("")) price = best.findElements(By.cssSelector(batchSchedule.getPriceSelector3()));
+                    String[] prices = price.get(0).getText().split("\n");
+                    log.info("price : " + prices[batchSchedule.getPriceLocation()]);
+                    
+                    List<WebElement> deliveryFee = best.findElements(By.cssSelector(batchSchedule.getDeliveryFeeSelector1()));
+                    if(deliveryFee.size() == 0 && batchSchedule.getDeliveryFeeSelector2() != null &&!batchSchedule.getDeliveryFeeSelector2().equals("")) deliveryFee = best.findElements(By.cssSelector(batchSchedule.getDeliveryFeeSelector2()));
+                    if(deliveryFee.size() == 0 && batchSchedule.getDeliveryFeeSelector3() != null &&!batchSchedule.getDeliveryFeeSelector3().equals("")) deliveryFee = best.findElements(By.cssSelector(batchSchedule.getDeliveryFeeSelector3()));
+                    String[] deliveryFees = deliveryFee.get(0).getText().split("\n");
+                    if(batchSchedule.getBatchName().equals("네이버쇼핑")) {
+                    	if(deliveryFees.length > batchSchedule.getDeliveryFeeLocation()) log.info("deliveryFee : " + deliveryFees[batchSchedule.getDeliveryFeeLocation()]);
+                    	else log.info("deliveryFee : 별도확인필요");
+                    }
+                    else {
+                    	// 타쇼핑몰일 경우..
+                    }
+                    
+                    
+                    List<WebElement> seller = best.findElements(By.cssSelector(batchSchedule.getSellerSelector1()));
+                    if(seller.size() == 0 && batchSchedule.getSellerSelector2() != null &&!batchSchedule.getSellerSelector2().equals("")) seller = best.findElements(By.cssSelector(batchSchedule.getSellerSelector2()));
+                    if(seller.size() == 0 && batchSchedule.getSellerSelector3() != null &&!batchSchedule.getSellerSelector3().equals("")) seller = best.findElements(By.cssSelector(batchSchedule.getSellerSelector3()));
+                    String[] sellers = seller.get(0).getText().split("\n");
+                    if(batchSchedule.getBatchName().equals("네이버쇼핑")) {
+                    	String confirmSeller = sellers[batchSchedule.getSellerLocation()] == null || sellers[batchSchedule.getSellerLocation()].equals("")? batchSchedule.getBatchName() : sellers[batchSchedule.getSellerLocation()];
+                        log.info("seller : " + (confirmSeller.equals("쇼핑몰별 최저가")? batchSchedule.getBatchName() : confirmSeller));
+                    }
+                    else {
+                    	// 타쇼핑몰일 경우..
+                    }
+                    
+                    List<WebElement> urls = best.findElements(By.cssSelector(batchSchedule.getUrlSelector1()));
+                    if(urls.size() == 0 && batchSchedule.getUrlSelector2() != null &&!batchSchedule.getUrlSelector2().equals("")) urls = best.findElements(By.cssSelector(batchSchedule.getUrlSelector2()));
+                    if(urls.size() == 0 && batchSchedule.getUrlSelector3() != null &&!batchSchedule.getUrlSelector3().equals("")) urls = best.findElements(By.cssSelector(batchSchedule.getUrlSelector3()));
+                    String url = urls.get(0).getAttribute("href");
                     log.info("url : " + url);
             	}
             	catch(NoSuchElementException e) {
+            		log.info("NoSuchElementException is expired");
             		skippedCount++;
             		totalSkippedSize++;
             		continue;
             	}
             	catch(Exception e) {
-            		e.printStackTrace();
-            		throw e;
+            		log.info("OtherException is expired");
+            		skippedCount++;
+            		totalSkippedSize++;
+            		continue;
             	}
             }
         }
@@ -141,14 +203,14 @@ public class TestTasklet implements Tasklet {
         // TODO: 다음 버튼을 찾아서 반환하는 코드 작성
     	String byFunKey = "CSSSELECTOR";
     	WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(1));
-    	String selectString = "div#container > div > div#content > div > div:nth-of-type(4) > a:last-of-type";
+    	String selectString = batchSchedule.getNextButtonSelector();
     	WebElement target = wait.until(ExpectedConditions.presenceOfElementLocated( 
                 byFunKey.equals("XPATH") ? By.xpath(selectString) : By.cssSelector(selectString) ));
     	if(target.getText().equals("다음")) return target;
     	else return null;
     }
     
-    private static void runSelenium(String URL, Logger log) throws Exception {
+    private static void runSelenium(Logger log) throws Exception {
     	log.info("#### START ####");
         
         // 1. WebDriver 경로 설정
@@ -169,7 +231,7 @@ public class TestTasklet implements Tasklet {
         WebDriver driver = new FirefoxDriver( options );
             
         // 4. 웹페이지 요청
-        driver.get(URL);
+        driver.get(batchSchedule.getUrl());
         
         navigateToLastPage(driver, log);
     }
