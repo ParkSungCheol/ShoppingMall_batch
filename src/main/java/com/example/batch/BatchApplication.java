@@ -4,11 +4,8 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -24,8 +21,6 @@ public class BatchApplication implements CommandLineRunner {
 
 	@Autowired
 	JobLauncher jobLauncher;
-	@Autowired
-	private JobExplorer jobExplorer;
 	@Autowired
 	SimpleJobConfiguration simpleJobConfiguration; 
 	@Autowired
@@ -68,12 +63,6 @@ public class BatchApplication implements CommandLineRunner {
                     .addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
                     .addLong("time", System.currentTimeMillis())
                     .toJobParameters();
-            // JobInstanceDao를 사용하여 JobInstance를 생성함
-//            JobInstance jobInstance = jobExplorer.getLastJobInstance(job.getName());
-//            if (!jobExplorer.getJobExecutions(jobInstance).isEmpty()) {
-//                // 이미 실행 중인 JobExecution이 있으면 Job을 실행하지 않음
-//                return;
-//            }
             jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
         }
 	  }
