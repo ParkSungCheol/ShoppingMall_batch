@@ -2,22 +2,17 @@ package com.example.batch;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.JobInstance;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.annotation.Transactional;
-
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleService;
 import com.example.batch.job.SimpleJobConfiguration;
@@ -28,8 +23,6 @@ public class BatchApplication implements CommandLineRunner {
 	@Autowired
 	JobLauncher jobLauncher;
 	@Autowired
-	JobRepository jobRepository;
-	@Autowired
 	SimpleJobConfiguration simpleJobConfiguration; 
 	@Autowired
     private TaskExecutor taskExecutor;
@@ -39,7 +32,6 @@ public class BatchApplication implements CommandLineRunner {
     	return LoggerFactory.getLogger(this.getClass());
     });
 	private static final int MAX_THREADS = 5;
-	private static final int maxRetry = 100;
 	  
 	public static void main(String[] args) {
 		SpringApplication.run(BatchApplication.class, args);
@@ -90,45 +82,14 @@ public class BatchApplication implements CommandLineRunner {
                             .addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
                             .addLong("time", System.currentTimeMillis())
                             .toJobParameters();
-                    int retry = 0;
-                    while (true) {
-                    	try {
-	                    	JobInstance instance = createJobInstance(batchSchedule.getBatchNum(), jobParameters);
-	                    	if(instance == null) {
-		                        if (++retry > maxRetry) {
-		                            throw new RuntimeException("Failed to create job instance after " + maxRetry + " retries.");
-		                        }
-		                        Random random = new Random();
-		                        int randomNumber = random.nextInt(9) + 1;
-		                        Thread.sleep(100L * randomNumber); // 잠시 대기 후 다시 시도
-	                    	}
-	                    	else {
-	                    		jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
-	                    		break;
-	                    	}
-                    	} catch(Exception e) {
-                    		e.printStackTrace();
-                    		continue;
-                    	}
+                    try {
+	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
+                    } catch(Exception e) {
+                    	e.printStackTrace();
                     }
                 }
             });
         }
 
 	  }
-	
-	public JobInstance createJobInstance(int jobId, JobParameters jobParameters) {
-        synchronized (jobRepository) {
-            try {
-            	log.get().info("jobRepository : " + jobId);
-            	if(jobRepository.getLastJobExecution(Integer.toString(jobId), jobParameters) != null) {
-            		return jobRepository.getLastJobExecution(Integer.toString(jobId), jobParameters).getJobInstance();
-            	}
-                return jobRepository.createJobInstance(Integer.toString(jobId), jobParameters);
-            } catch (Exception ex) {
-                return null;
-            }
-        }
-    }
-
 }
