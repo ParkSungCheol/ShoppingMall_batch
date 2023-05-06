@@ -1,5 +1,6 @@
 package com.example.batch.config;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 public class JobCompletionNotificationListener implements JobExecutionListener {
 
     private final DataSource dataSource;
+    private Connection connection;
     private Logger log = LoggerFactory.getLogger(this.getClass());
 
     public JobCompletionNotificationListener(DataSource dataSource) {
@@ -19,13 +21,24 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     }
 
     @Override
-    public void beforeJob(JobExecution jobExecution) { }
+    public void beforeJob(JobExecution jobExecution) {
+    	try {
+            if (connection == null || connection.isClosed()) {
+                connection = dataSource.getConnection();
+                log.info("db connection opend");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public void afterJob(JobExecution jobExecution) {
-        try {
-            dataSource.getConnection().close();
-            log.info("dataSource Connection is closed");
+    	try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+                log.info("db connection closed");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }

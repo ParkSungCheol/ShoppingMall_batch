@@ -32,24 +32,7 @@ public class TestTasklet implements Tasklet {
     private static final ThreadLocal<Integer> totalSize = new ThreadLocal<>();
     private static final ThreadLocal<Integer> totalSkippedSize = new ThreadLocal<>();
     private static final ThreadLocal<BatchSchedule> batchSchedule = new ThreadLocal<>();
-    private static final ThreadLocal<WebDriver> driver = ThreadLocal.withInitial(() -> {
-    	// 1. WebDriver 경로 설정
-        Path path = Paths.get("C:\\ShoppingMall/batch/driver/geckodriver.exe");
-        System.setProperty("webdriver.gecko.driver", path.toString());
-        
-        // 2. WebDriver 옵션 설정
-        FirefoxOptions options = new FirefoxOptions();
-        options.addArguments("--start-maximized");          // 최대크기로
-        options.addArguments("--headless");                 // Browser를 띄우지 않음
-        options.addArguments("--disable-gpu");              // GPU를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
-        options.addArguments("--no-sandbox");               // Sandbox 프로세스를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
-        options.addArguments("--disable-popup-blocking");    // 팝업 무시
-        options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
-        options.addArguments("--disable-default-apps");     // 기본앱 사용안함
-        
-        // 3. WebDriver 객체 생성
-        return new FirefoxDriver( options );
-    });
+    private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -232,6 +215,23 @@ public class TestTasklet implements Tasklet {
     
     private static void runSelenium(Logger log) throws Exception {
     	log.info("#### START ####");
+        
+    	// 1. WebDriver 경로 설정
+        Path path = Paths.get("C:\\ShoppingMall/batch/driver/geckodriver.exe");
+        System.setProperty("webdriver.gecko.driver", path.toString());
+        
+        // 2. WebDriver 옵션 설정
+        FirefoxOptions options = new FirefoxOptions();
+        options.addArguments("--start-maximized");          // 최대크기로
+        options.addArguments("--headless");                 // Browser를 띄우지 않음
+        options.addArguments("--disable-gpu");              // GPU를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
+        options.addArguments("--no-sandbox");               // Sandbox 프로세스를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
+        options.addArguments("--disable-popup-blocking");    // 팝업 무시
+        options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
+        options.addArguments("--disable-default-apps");     // 기본앱 사용안함
+        
+        // 3. WebDriver 객체 생성
+        driver.set(new FirefoxDriver( options ));
         
         // 4. 웹페이지 요청
         driver.get().get(batchSchedule.get().getUrl());

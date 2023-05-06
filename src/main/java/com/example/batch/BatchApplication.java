@@ -31,7 +31,7 @@ public class BatchApplication implements CommandLineRunner {
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
     	return LoggerFactory.getLogger(this.getClass());
     });
-	private static final int MAX_THREADS = 5;
+	private static final int MAX_THREADS = 9;
 	  
 	public static void main(String[] args) {
 		SpringApplication.run(BatchApplication.class, args);

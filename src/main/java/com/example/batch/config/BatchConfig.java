@@ -29,9 +29,11 @@ public class BatchConfig implements BatchConfigurer {
     @Bean
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(5);
-        taskExecutor.setMaxPoolSize(5);
+        taskExecutor.setCorePoolSize(9);
+        taskExecutor.setMaxPoolSize(9);
         taskExecutor.setThreadNamePrefix("batch-thread-");
+        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        taskExecutor.setAwaitTerminationSeconds(-1);
         taskExecutor.initialize();
         this.taskExecutor = taskExecutor;
         return taskExecutor;
@@ -44,6 +46,7 @@ public class BatchConfig implements BatchConfigurer {
         factory.setDataSource(dataSource);
         factory.setTransactionManager(getTransactionManager());
         factory.setIsolationLevelForCreate("ISOLATION_REPEATABLE_READ"); // 원하는 Isolation Level 설정
+        factory.setDatabaseType("MYSQL"); // 데이터베이스 유형 설정
         factory.afterPropertiesSet();
         return factory.getObject();
 	}
