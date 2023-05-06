@@ -11,7 +11,6 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -21,6 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class BatchConfig implements BatchConfigurer {
 
 	private final DataSource dataSource;
+	private TaskExecutor taskExecutor;
 	
 	public BatchConfig(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -33,6 +33,7 @@ public class BatchConfig implements BatchConfigurer {
         taskExecutor.setMaxPoolSize(5);
         taskExecutor.setThreadNamePrefix("batch-thread-");
         taskExecutor.initialize();
+        this.taskExecutor = taskExecutor;
         return taskExecutor;
     }
 
@@ -60,7 +61,7 @@ public class BatchConfig implements BatchConfigurer {
 		// TODO Auto-generated method stub
 		SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
         jobLauncher.setJobRepository(getJobRepository());
-        jobLauncher.setTaskExecutor(new SimpleAsyncTaskExecutor());
+        jobLauncher.setTaskExecutor(taskExecutor);
         jobLauncher.afterPropertiesSet();
         return jobLauncher;
 	}
