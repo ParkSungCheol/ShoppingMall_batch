@@ -22,7 +22,7 @@
 	        , NULL
 	        , NULL
 	        , NULL
-	        , NVL(#{Goods.deliveryfee}, 0)
+	        , #{Goods.deliveryfee}
 	        , #{Goods.sellid}
 	        , SYSDATE()
 	        , #{Goods.image}
