@@ -3,9 +3,9 @@ package com.example.batch.tasklet;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
@@ -21,8 +21,9 @@ import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.repeat.RepeatStatus;
-
 import com.example.batch.Domain.BatchSchedule;
+import com.example.batch.Domain.Goods;
+import com.example.batch.Service.GoodsService;
 
 public class TestTasklet implements Tasklet {
 
@@ -33,6 +34,12 @@ public class TestTasklet implements Tasklet {
     private static final ThreadLocal<Integer> totalSkippedSize = new ThreadLocal<>();
     private static final ThreadLocal<BatchSchedule> batchSchedule = new ThreadLocal<>();
     private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
+    private GoodsService goodsService;
+    
+    public TestTasklet(GoodsService goodsService) {
+		// TODO Auto-generated constructor stub
+		this.goodsService = goodsService;
+	}
 
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -60,21 +67,43 @@ public class TestTasklet implements Tasklet {
     	batchSchedule.get().setUrlSelector2((String) chunkContext.getStepContext().getJobParameters().get("urlSelector2"));
     	batchSchedule.get().setUrlSelector3((String) chunkContext.getStepContext().getJobParameters().get("urlSelector3"));
     	batchSchedule.get().setNextButtonSelector((String) chunkContext.getStepContext().getJobParameters().get("nextButtonSelector"));
+    	batchSchedule.get().setImageSelector((String) chunkContext.getStepContext().getJobParameters().get("imageSelector"));
     	
     	log.get().info("url : " + batchSchedule.get().getUrl());
     	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
     		totalSize.set(0);
     		totalSkippedSize.set(0);
-    		runSelenium(log.get());
+    		runSelenium(log.get(), goodsService);
     	}
         return RepeatStatus.FINISHED;
     }
     
-    public static void infiniteScroll() {
+    public static void infiniteScroll(Logger log) {
         JavascriptExecutor js = (JavascriptExecutor) driver.get();
-        long currentHeight = (long) js.executeScript("return document.body.scrollHeight");
+        long currentHeight = 0;
         while (true) {
-            js.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+        	long scrollHeight = (long) js.executeScript("return document.body.scrollHeight");
+        	
+        	while (true) {
+        		currentHeight += 300;
+    		   js.executeScript("window.scrollTo(0, " + currentHeight + ")");
+    		   try {
+    		      Thread.sleep(100);
+    		   } catch (InterruptedException e) {
+    		      e.printStackTrace();
+    		   }
+    		   if(currentHeight + 300 > scrollHeight) {
+    			   js.executeScript("window.scrollTo(0, " + scrollHeight + ")");
+        		   currentHeight = scrollHeight;
+        		   try {
+        		      Thread.sleep(100);
+        		      break;
+        		   } catch (InterruptedException e) {
+        		      e.printStackTrace();
+        		   }
+    		   }
+    		}
+        	
             try {
                 Thread.sleep(1000); // 1초 대기
             } catch (InterruptedException e) {
@@ -84,19 +113,18 @@ public class TestTasklet implements Tasklet {
             if (newHeight == currentHeight) {
                 break;
             }
-            currentHeight = newHeight;
         }
     }
     
-    private static void crawling(Logger log, int pageNumber) {
+    private static void crawling(Logger log, int pageNumber, GoodsService goodsService) {
     	log.info("Current PageNumber : " + pageNumber);
     	// 5. 페이지 로딩을 위한 최대 1초 대기
         driver.get().manage().timeouts().implicitlyWait(100, TimeUnit.MILLISECONDS);
         
         // 6. 조회, 로드될 때까지 최대 5초 대기
-        WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(1));
+        WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
         
-        infiniteScroll();
+        infiniteScroll(log);
         
         String byFunKey = "CSSSELECTOR";
         String selectString = batchSchedule.get().getTotalSelector();
@@ -106,6 +134,8 @@ public class TestTasklet implements Tasklet {
                 byFunKey.equals("XPATH") ? By.xpath(selectString) : By.cssSelector(selectString) ));
 //            log.info("#### innerHTML : \n" + parent.getAttribute("innerHTML"));
         
+        List<Goods> goodsList = new ArrayList<Goods>();
+        
         // 7. 콘텐츠 조회
         List<WebElement> bestContests = parent.findElements(By.xpath("*"));
         log.info( "등록된 상품 수 : " + bestContests.size() );
@@ -114,38 +144,44 @@ public class TestTasklet implements Tasklet {
         if (bestContests.size() > 0) {
             for (WebElement best : bestContests) {
             	try {
+            		goodsList.add(new Goods());
+            		Goods goods = goodsList.get(goodsList.size() - 1);
+            		
             		List<WebElement> title = best.findElements(By.cssSelector(batchSchedule.get().getTitleSelector1()));
                     if(title.size() == 0 && batchSchedule.get().getTitleSelector2() != null &&!batchSchedule.get().getTitleSelector2().equals("")) title = best.findElements(By.cssSelector(batchSchedule.get().getTitleSelector2()));
                     if(title.size() == 0 && batchSchedule.get().getTitleSelector3() != null &&!batchSchedule.get().getTitleSelector3().equals("")) title = best.findElements(By.cssSelector(batchSchedule.get().getTitleSelector3()));
                     String[] titles = title.get(0).getText().split("\n");
-                    log.info("title : " + titles[batchSchedule.get().getTitleLocation()]);
+                    goods.setName(titles[batchSchedule.get().getTitleLocation()]);
                     
                     List<WebElement> price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector1()));
                     if(price.size() == 0 && batchSchedule.get().getPriceSelector2() != null &&!batchSchedule.get().getPriceSelector2().equals("")) price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector2()));
                     if(price.size() == 0 && batchSchedule.get().getPriceSelector3() != null &&!batchSchedule.get().getPriceSelector3().equals("")) price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector3()));
                     String[] prices = price.get(0).getText().split("\n");
-                    log.info("price : " + prices[batchSchedule.get().getPriceLocation()]);
+                    goods.setPrice(Integer.parseInt(prices[batchSchedule.get().getPriceLocation()].replaceAll("[^0-9]", "")));
                     
                     List<WebElement> deliveryFee = best.findElements(By.cssSelector(batchSchedule.get().getDeliveryFeeSelector1()));
                     if(deliveryFee.size() == 0 && batchSchedule.get().getDeliveryFeeSelector2() != null &&!batchSchedule.get().getDeliveryFeeSelector2().equals("")) deliveryFee = best.findElements(By.cssSelector(batchSchedule.get().getDeliveryFeeSelector2()));
                     if(deliveryFee.size() == 0 && batchSchedule.get().getDeliveryFeeSelector3() != null &&!batchSchedule.get().getDeliveryFeeSelector3().equals("")) deliveryFee = best.findElements(By.cssSelector(batchSchedule.get().getDeliveryFeeSelector3()));
                     String[] deliveryFees = deliveryFee.get(0).getText().split("\n");
                     if(batchSchedule.get().getBatchName().equals("네이버쇼핑")) {
-                    	if(deliveryFees.length > batchSchedule.get().getDeliveryFeeLocation()) log.info("deliveryFee : " + deliveryFees[batchSchedule.get().getDeliveryFeeLocation()]);
-                    	else log.info("deliveryFee : 별도확인필요");
+                    	if(deliveryFees.length > batchSchedule.get().getDeliveryFeeLocation()) {
+                    		String deliveryFeeString = deliveryFees[batchSchedule.get().getDeliveryFeeLocation()].replaceAll("[^0-9]", "");
+                    		if(deliveryFeeString.equals("")) deliveryFeeString = "0";
+                    		goods.setDeliveryfee(Integer.parseInt(deliveryFeeString));
+                    	}
+                    	else goods.setDeliveryfee(null);
                     }
                     else {
                     	// 타쇼핑몰일 경우..
                     }
-                    
                     
                     List<WebElement> seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector1()));
                     if(seller.size() == 0 && batchSchedule.get().getSellerSelector2() != null &&!batchSchedule.get().getSellerSelector2().equals("")) seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector2()));
                     if(seller.size() == 0 && batchSchedule.get().getSellerSelector3() != null &&!batchSchedule.get().getSellerSelector3().equals("")) seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector3()));
                     String[] sellers = seller.get(0).getText().split("\n");
                     if(batchSchedule.get().getBatchName().equals("네이버쇼핑")) {
-                    	String confirmSeller = sellers[batchSchedule.get().getSellerLocation()] == null || sellers[batchSchedule.get().getSellerLocation()].equals("")? batchSchedule.get().getBatchName() : sellers[batchSchedule.get().getSellerLocation()];
-                        log.info("seller : " + (confirmSeller.equals("쇼핑몰별 최저가")? batchSchedule.get().getBatchName() : confirmSeller));
+                    	String confirmSeller = sellers[batchSchedule.get().getSellerLocation()] == null || sellers[batchSchedule.get().getSellerLocation()].equals("") || sellers[batchSchedule.get().getSellerLocation()].equals("쇼핑몰별 최저가")? batchSchedule.get().getBatchName() : sellers[batchSchedule.get().getSellerLocation()];
+                        goods.setSellid(confirmSeller);
                     }
                     else {
                     	// 타쇼핑몰일 경우..
@@ -155,30 +191,39 @@ public class TestTasklet implements Tasklet {
                     if(urls.size() == 0 && batchSchedule.get().getUrlSelector2() != null &&!batchSchedule.get().getUrlSelector2().equals("")) urls = best.findElements(By.cssSelector(batchSchedule.get().getUrlSelector2()));
                     if(urls.size() == 0 && batchSchedule.get().getUrlSelector3() != null &&!batchSchedule.get().getUrlSelector3().equals("")) urls = best.findElements(By.cssSelector(batchSchedule.get().getUrlSelector3()));
                     String url = urls.get(0).getAttribute("href");
-                    log.info("url : " + url);
+                    goods.setDetail(url);
+                    
+                    // elements 요소들이 나타날 때까지 대기
+                    List<WebElement> images = best.findElements(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1) > img"));
+                    String image = images.get(0).getAttribute("src");
+                    goods.setImage(image);
             	}
             	catch(NoSuchElementException e) {
+            		goodsList.remove(goodsList.size() - 1);
             		log.info("NoSuchElementException is expired");
             		skippedCount++;
             		totalSkippedSize.set(totalSkippedSize.get() + 1);
             		continue;
             	}
             	catch(Exception e) {
-            		log.info("OtherException is expired");
+            		goodsList.remove(goodsList.size() - 1);
+            		e.printStackTrace();
             		skippedCount++;
             		totalSkippedSize.set(totalSkippedSize.get() + 1);
             		continue;
             	}
             }
         }
+        
+        goodsService.insertGoodsList(goodsList);
         log.info("target : " + bestContests.size() + ", inserted : " + (bestContests.size() - skippedCount) + ", error : " + skippedCount);
         
         log.info("#### crawling END ####");
     }
     
-    public static void navigateToLastPage(Logger log) {
+    public static void navigateToLastPage(Logger log, GoodsService goodsService) {
     	int pageNumber = 1;
-    	crawling(log, pageNumber);
+    	crawling(log, pageNumber, goodsService);
         while (true) {
             // 페이지에서 다음 버튼을 찾아 클릭합니다.
             WebElement nextButton = findNextButton();
@@ -193,9 +238,9 @@ public class TestTasklet implements Tasklet {
             }
             nextButton.click();
             pageNumber++;
-            crawling(log, pageNumber);
+            crawling(log, pageNumber, goodsService);
             try {
-                Thread.sleep(1000); // 1초 대기
+                Thread.sleep(2000); // 1초 대기
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -205,7 +250,7 @@ public class TestTasklet implements Tasklet {
     private static WebElement findNextButton() {
         // TODO: 다음 버튼을 찾아서 반환하는 코드 작성
     	String byFunKey = "CSSSELECTOR";
-    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(1));
+    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
     	String selectString = batchSchedule.get().getNextButtonSelector();
     	WebElement target = wait.until(ExpectedConditions.presenceOfElementLocated( 
                 byFunKey.equals("XPATH") ? By.xpath(selectString) : By.cssSelector(selectString) ));
@@ -213,7 +258,7 @@ public class TestTasklet implements Tasklet {
     	else return null;
     }
     
-    private static void runSelenium(Logger log) throws Exception {
+    private static void runSelenium(Logger log, GoodsService goodsService) throws Exception {
     	log.info("#### START ####");
         
     	// 1. WebDriver 경로 설정
@@ -236,6 +281,6 @@ public class TestTasklet implements Tasklet {
         // 4. 웹페이지 요청
         driver.get().get(batchSchedule.get().getUrl());
         
-        navigateToLastPage(log);
+        navigateToLastPage(log, goodsService);
     }
 }

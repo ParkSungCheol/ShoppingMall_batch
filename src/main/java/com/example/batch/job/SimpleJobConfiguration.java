@@ -10,6 +10,8 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+
+import com.example.batch.Service.GoodsService;
 import com.example.batch.config.JobCompletionNotificationListener;
 import com.example.batch.tasklet.TestTasklet;
 
@@ -35,6 +37,8 @@ public class SimpleJobConfiguration {
 	JobLauncher jobLauncher;
 	@Autowired
 	JobRepository jobRepository;
+	@Autowired
+	GoodsService goodsService;
 
     public Job myJob() {
         return this.jobBuilderFactory.get("myJob")
@@ -48,7 +52,7 @@ public class SimpleJobConfiguration {
 
     public Step myStep() {
         return stepBuilderFactory.get("myStep")
-                .tasklet(new TestTasklet())
+                .tasklet(new TestTasklet(goodsService))
                 .build();
     }
 }

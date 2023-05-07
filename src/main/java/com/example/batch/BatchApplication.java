@@ -31,7 +31,7 @@ public class BatchApplication implements CommandLineRunner {
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
     	return LoggerFactory.getLogger(this.getClass());
     });
-	private static final int MAX_THREADS = 9;
+	private static final int MAX_THREADS = 4;
 	  
 	public static void main(String[] args) {
 		SpringApplication.run(BatchApplication.class, args);
@@ -80,6 +80,7 @@ public class BatchApplication implements CommandLineRunner {
                             .addString("urlSelector2", batchSchedule.getUrlSelector2())
                             .addString("urlSelector3", batchSchedule.getUrlSelector3())
                             .addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
+                            .addString("imageSelector", batchSchedule.getImageSelector())
                             .addLong("time", System.currentTimeMillis())
                             .toJobParameters();
                     try {

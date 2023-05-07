@@ -54,6 +54,8 @@ public class BatchSchedule {
     private String urlSelector3;
 	@JsonProperty
     private String nextButtonSelector;
+	@JsonProperty
+    private String imageSelector;
 	public int getBatchNum() {
 		return batchNum;
 	}
@@ -197,5 +199,11 @@ public class BatchSchedule {
 	}
 	public void setNextButtonSelector(String nextButtonSelector) {
 		this.nextButtonSelector = nextButtonSelector;
+	}
+	public String getImageSelector() {
+		return imageSelector;
+	}
+	public void setImageSelector(String imageSelector) {
+		this.imageSelector = imageSelector;
 	}
 }
