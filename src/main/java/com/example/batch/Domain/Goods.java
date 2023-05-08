@@ -96,5 +96,11 @@ public class Goods {
 	public void setDetail(String detail) {
 		this.detail = detail;
 	}
-	
+	@Override
+	public String toString() {
+		return "Goods [rownum=" + rownum + ", name=" + name + ", price=" + price + ", amount=" + amount
+				+ ", discountamount=" + discountamount + ", discountrate=" + discountrate + ", deliveryfee="
+				+ deliveryfee + ", sellid=" + sellid + ", date=" + date + ", image=" + image + ", detail=" + detail
+				+ "]";
+	}
 }
