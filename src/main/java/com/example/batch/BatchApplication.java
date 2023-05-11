@@ -22,7 +22,7 @@ public class BatchApplication implements CommandLineRunner {
 
 	@Autowired
 	JobLauncher jobLauncher;
-	@Autowired
+	@Autowired 
 	SimpleJobConfiguration simpleJobConfiguration; 
 	@Autowired
     private TaskExecutor taskExecutor;
