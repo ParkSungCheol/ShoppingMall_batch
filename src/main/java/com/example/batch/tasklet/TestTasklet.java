@@ -85,14 +85,14 @@ public class TestTasklet implements Tasklet {
         	long scrollHeight = (long) js.executeScript("return document.body.scrollHeight");
         	
         	while (true) {
-        		currentHeight += 200;
+        		currentHeight += 100;
     		   js.executeScript("window.scrollTo(0, " + currentHeight + ")");
     		   try {
     		      Thread.sleep(100);
     		   } catch (InterruptedException e) {
     		      e.printStackTrace();
     		   }
-    		   if(currentHeight + 200 > scrollHeight) {
+    		   if(currentHeight + 100 > scrollHeight) {
     			   js.executeScript("window.scrollTo(0, " + scrollHeight + ")");
         		   currentHeight = scrollHeight;
         		   try {
