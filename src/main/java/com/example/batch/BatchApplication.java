@@ -32,7 +32,7 @@ public class BatchApplication implements CommandLineRunner {
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
     	return LoggerFactory.getLogger(this.getClass());
     });
-	private static final int MAX_THREADS = 4;
+	private static final int MAX_THREADS = 3;
 	private static ConfigurableApplicationContext context;
 	  
 	public static void main(String[] args) {
