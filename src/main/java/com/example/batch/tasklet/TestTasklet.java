@@ -91,6 +91,7 @@ public class TestTasklet implements Tasklet {
     		      Thread.sleep(100);
     		   } catch (InterruptedException e) {
     		      e.printStackTrace();
+    		      break;
     		   }
     		   if(currentHeight + 100 > scrollHeight) {
     			   js.executeScript("window.scrollTo(0, " + scrollHeight + ")");
@@ -100,6 +101,7 @@ public class TestTasklet implements Tasklet {
         		      break;
         		   } catch (InterruptedException e) {
         		      e.printStackTrace();
+        		      break;
         		   }
     		   }
     		}
@@ -108,6 +110,7 @@ public class TestTasklet implements Tasklet {
                 Thread.sleep(1000); // 1초 대기
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                break;
             }
             long newHeight = (long) js.executeScript("return document.body.scrollHeight");
             if (newHeight == currentHeight) {
@@ -243,6 +246,7 @@ public class TestTasklet implements Tasklet {
                 Thread.sleep(2000); // 1초 대기
             } catch (InterruptedException e) {
                 e.printStackTrace();
+                break;
             }
         }
     }

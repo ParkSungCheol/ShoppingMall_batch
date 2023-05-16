@@ -90,6 +90,7 @@ public class BatchApplication implements CommandLineRunner {
                     } catch(Exception e) {
                     	e.printStackTrace();
                     	SpringApplication.exit(context);
+                    	System.exit(1);
                     }
                 }
             });
