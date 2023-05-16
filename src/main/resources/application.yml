@@ -21,6 +21,3 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
   config-location: classpath:/mybatis/mybatis-config.xml
-
-server:
-  port: 8081
