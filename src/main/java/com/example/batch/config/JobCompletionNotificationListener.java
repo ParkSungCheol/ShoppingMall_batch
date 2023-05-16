@@ -42,6 +42,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     @Override
     public void afterJob(JobExecution jobExecution) {
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
+    	log.info("tte.getActiveCount() : {}", tte.getActiveCount());
     	if(tte.getActiveCount() == 0) {
     		try {
                 if (connection != null && !connection.isClosed()) {
