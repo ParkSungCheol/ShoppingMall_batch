@@ -256,10 +256,14 @@ public class TestTasklet implements Tasklet {
     	String byFunKey = "CSSSELECTOR";
     	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
     	String selectString = batchSchedule.get().getNextButtonSelector();
+    	try {
     	WebElement target = wait.until(ExpectedConditions.presenceOfElementLocated( 
                 byFunKey.equals("XPATH") ? By.xpath(selectString) : By.cssSelector(selectString) ));
     	if(target.getText().equals("다음")) return target;
     	else return null;
+    	} catch (Exception e) {
+    		return null;
+    	}
     }
     
     private static void runSelenium(Logger log, GoodsService goodsService) throws Exception {
