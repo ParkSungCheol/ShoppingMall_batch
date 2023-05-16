@@ -64,10 +64,10 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		
     		BatchStatus batchStatus = jobExecution.getStatus();
     		if(batchStatus.isGreaterThan(BatchStatus.STOPPING)) {
-    			System.exit(0);
+//    			System.exit(0);
     		}
     		else {
-    			System.exit(1);
+//    			System.exit(1);
     		}
     	}
     }
