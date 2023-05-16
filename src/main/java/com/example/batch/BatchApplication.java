@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.batch.Domain.BatchSchedule;
@@ -32,9 +33,10 @@ public class BatchApplication implements CommandLineRunner {
     	return LoggerFactory.getLogger(this.getClass());
     });
 	private static final int MAX_THREADS = 4;
+	private static ConfigurableApplicationContext context;
 	  
 	public static void main(String[] args) {
-		SpringApplication.run(BatchApplication.class, args);
+		context = SpringApplication.run(BatchApplication.class, args);
 	}
 	
 	@Override
@@ -87,6 +89,7 @@ public class BatchApplication implements CommandLineRunner {
 	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
                     } catch(Exception e) {
                     	e.printStackTrace();
+                    	SpringApplication.exit(context);
                     }
                 }
             });

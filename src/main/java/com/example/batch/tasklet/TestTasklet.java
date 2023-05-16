@@ -262,7 +262,8 @@ public class TestTasklet implements Tasklet {
     	log.info("#### START ####");
         
     	// 1. WebDriver 경로 설정
-        Path path = Paths.get("driver\\geckodriver");
+        // Path path = Paths.get("driver\\geckodriver");
+    	Path path = Paths.get("driver//geckodriver");
         System.setProperty("webdriver.gecko.driver", path.toString());
         
         // 2. WebDriver 옵션 설정
