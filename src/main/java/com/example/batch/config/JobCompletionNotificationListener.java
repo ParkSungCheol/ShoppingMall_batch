@@ -2,6 +2,7 @@ package com.example.batch.config;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -14,6 +15,9 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
+import com.example.batch.Domain.BatchSchedule;
+import com.example.batch.Service.BatchScheduleService;
+
 @Component
 public class JobCompletionNotificationListener implements JobExecutionListener {
 
@@ -21,10 +25,13 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private Connection connection;
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private TaskExecutor taskExecutor;
+    private static int jobCount;
     
-    public JobCompletionNotificationListener(DataSource dataSource, TaskExecutor taskExecutor) {
+    public JobCompletionNotificationListener(DataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
+        List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList();
+        jobCount = batchSchedules.size();
     }
 
     @Override
@@ -41,9 +48,9 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 
     @Override
     public void afterJob(JobExecution jobExecution) {
+    	jobCount--;
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
-    	log.info("tte.getActiveCount() : {}", tte.getActiveCount());
-    	if(tte.getActiveCount() == 0) {
+    	if(jobCount == 0) {
     		try {
                 if (connection != null && !connection.isClosed()) {
                     connection.close();
