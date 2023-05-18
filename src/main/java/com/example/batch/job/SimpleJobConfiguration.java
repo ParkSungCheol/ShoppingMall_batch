@@ -17,6 +17,7 @@ import com.example.batch.Domain.Goods;
 import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
 import com.example.batch.chunk.WebCrawlingReader;
+import com.example.batch.config.CustomItemProcessListener;
 import com.example.batch.config.JobCompletionNotificationListener;
 
 /*
@@ -47,6 +48,8 @@ public class SimpleJobConfiguration {
 	DataProcessor dataProcessor;
 	@Autowired
 	MyBatisItemWriter myBatisItemWriter;
+	@Autowired
+	CustomItemProcessListener customItemProcessListener;
 
     public Job myJob() {
         return this.jobBuilderFactory.get("myJob")
@@ -64,6 +67,7 @@ public class SimpleJobConfiguration {
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
+                .listener(customItemProcessListener)
                 .build();
     }
 }
