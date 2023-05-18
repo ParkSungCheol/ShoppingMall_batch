@@ -1,4 +1,4 @@
-package com.example.batch.tasklet;
+package com.example.batch.chunk;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,68 +17,126 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.StepContribution;
-import org.springframework.batch.core.scope.context.ChunkContext;
-import org.springframework.batch.core.step.tasklet.Tasklet;
-import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.batch.core.ExitStatus;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.StepExecutionListener;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.NonTransientResourceException;
+import org.springframework.batch.item.ParseException;
+import org.springframework.batch.item.UnexpectedInputException;
+import org.springframework.stereotype.Component;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
-import com.example.batch.Service.GoodsService;
 
-public class TestTasklet implements Tasklet {
+@Component
+public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecutionListener {
 
-    private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
+	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
     	return LoggerFactory.getLogger(this.getClass());
     });
     private static final ThreadLocal<Integer> totalSize = new ThreadLocal<>();
     private static final ThreadLocal<Integer> totalSkippedSize = new ThreadLocal<>();
     private static final ThreadLocal<BatchSchedule> batchSchedule = new ThreadLocal<>();
     private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
-    private GoodsService goodsService;
+    private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     
-    public TestTasklet(GoodsService goodsService) {
-		// TODO Auto-generated constructor stub
-		this.goodsService = goodsService;
+	@Override
+	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+		// TODO Auto-generated method stub
+    	
+    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
+    		if(totalSize.get() == 0) {
+    			log.get().info("#### START ####");
+    	        
+    	    	// 1. WebDriver 경로 설정
+    	    	Path path = Paths.get("driver//geckodriver");
+    	        System.setProperty("webdriver.gecko.driver", path.toString());
+    	        
+    	        // 2. WebDriver 옵션 설정
+    	        FirefoxOptions options = new FirefoxOptions();
+    	        options.addArguments("--start-maximized");          // 최대크기로
+    	        options.addArguments("--headless");                 // Browser를 띄우지 않음
+    	        options.addArguments("--disable-gpu");              // GPU를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
+    	        options.addArguments("--no-sandbox");               // Sandbox 프로세스를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
+    	        options.addArguments("--disable-popup-blocking");    // 팝업 무시
+    	        options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
+    	        options.addArguments("--disable-default-apps");     // 기본앱 사용안함
+    	        
+    	        // 3. WebDriver 객체 생성
+    	        driver.set(new FirefoxDriver( options ));
+    	        
+    	        // 4. 웹페이지 요청
+    	        driver.get().get(batchSchedule.get().getUrl());
+    	        
+    	        return crawling(log.get());
+    		}
+    		else {
+    			WebElement nextButton = findNextButton();
+                if (nextButton == null) {
+                	// 8. WebDriver 종료
+                    driver.get().quit();
+                    
+                    log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
+                    log.get().info("#### driver END ####");
+                    
+                    return null;
+                }
+                nextButton.click();
+                try {
+                    Thread.sleep(2000); // 1초 대기
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+                pageNumber.set(pageNumber.get()+1);
+                return crawling(log.get());
+    		}
+    	}
+		return null;
 	}
 
-    @Override
-    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
-    	batchSchedule.set(new BatchSchedule());
-    	batchSchedule.get().setBatchName((String) chunkContext.getStepContext().getJobParameters().get("batchName"));
-    	batchSchedule.get().setUrl((String) chunkContext.getStepContext().getJobParameters().get("url"));
-    	batchSchedule.get().setTotalSelector((String) chunkContext.getStepContext().getJobParameters().get("totalSelector"));
-    	batchSchedule.get().setTitleSelector1((String) chunkContext.getStepContext().getJobParameters().get("titleSelector1"));
-    	batchSchedule.get().setTitleSelector2((String) chunkContext.getStepContext().getJobParameters().get("titleSelector2"));
-    	batchSchedule.get().setTitleSelector3((String) chunkContext.getStepContext().getJobParameters().get("titleSelector3"));
-    	batchSchedule.get().setTitleLocation(chunkContext.getStepContext().getJobParameters().get("titleLocation") != null? Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("titleLocation")) : 0);
-    	batchSchedule.get().setPriceSelector1((String) chunkContext.getStepContext().getJobParameters().get("priceSelector1"));
-    	batchSchedule.get().setPriceSelector2((String) chunkContext.getStepContext().getJobParameters().get("priceSelector2"));
-    	batchSchedule.get().setPriceSelector3((String) chunkContext.getStepContext().getJobParameters().get("priceSelector3"));
-    	batchSchedule.get().setPriceLocation(chunkContext.getStepContext().getJobParameters().get("priceLocation") != null? Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("priceLocation")) : 0);
-    	batchSchedule.get().setDeliveryFeeSelector1((String) chunkContext.getStepContext().getJobParameters().get("deliveryFeeSelector1"));
-    	batchSchedule.get().setDeliveryFeeSelector2((String) chunkContext.getStepContext().getJobParameters().get("deliveryFeeSelector2"));
-    	batchSchedule.get().setDeliveryFeeSelector3((String) chunkContext.getStepContext().getJobParameters().get("deliveryFeeSelector3"));
-    	batchSchedule.get().setDeliveryFeeLocation(chunkContext.getStepContext().getJobParameters().get("deliveryFeeLocation") != null? Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("deliveryFeeLocation")) : 0);
-    	batchSchedule.get().setSellerSelector1((String) chunkContext.getStepContext().getJobParameters().get("sellerSelector1"));
-    	batchSchedule.get().setSellerSelector2((String) chunkContext.getStepContext().getJobParameters().get("sellerSelector2"));
-    	batchSchedule.get().setSellerSelector3((String) chunkContext.getStepContext().getJobParameters().get("sellerSelector3"));
-    	batchSchedule.get().setSellerLocation(chunkContext.getStepContext().getJobParameters().get("sellerLocation") != null? Integer.parseInt((String) chunkContext.getStepContext().getJobParameters().get("sellerLocation")) : 0);
-    	batchSchedule.get().setUrlSelector1((String) chunkContext.getStepContext().getJobParameters().get("urlSelector1"));
-    	batchSchedule.get().setUrlSelector2((String) chunkContext.getStepContext().getJobParameters().get("urlSelector2"));
-    	batchSchedule.get().setUrlSelector3((String) chunkContext.getStepContext().getJobParameters().get("urlSelector3"));
-    	batchSchedule.get().setNextButtonSelector((String) chunkContext.getStepContext().getJobParameters().get("nextButtonSelector"));
-    	batchSchedule.get().setImageSelector((String) chunkContext.getStepContext().getJobParameters().get("imageSelector"));
+	@Override
+	public void beforeStep(StepExecution stepExecution) {
+		// TODO Auto-generated method stub
+		batchSchedule.set(new BatchSchedule());
+    	batchSchedule.get().setBatchName((String) stepExecution.getJobExecution().getJobParameters().getString("batchName"));
+    	batchSchedule.get().setUrl((String) stepExecution.getJobExecution().getJobParameters().getString("url"));
+    	batchSchedule.get().setTotalSelector((String) stepExecution.getJobExecution().getJobParameters().getString("totalSelector"));
+    	batchSchedule.get().setTitleSelector1((String) stepExecution.getJobExecution().getJobParameters().getString("titleSelector1"));
+    	batchSchedule.get().setTitleSelector2((String) stepExecution.getJobExecution().getJobParameters().getString("titleSelector2"));
+    	batchSchedule.get().setTitleSelector3((String) stepExecution.getJobExecution().getJobParameters().getString("titleSelector3"));
+    	batchSchedule.get().setTitleLocation(stepExecution.getJobExecution().getJobParameters().getString("titleLocation") != null? Integer.parseInt((String) stepExecution.getJobExecution().getJobParameters().getString("titleLocation")) : 0);
+    	batchSchedule.get().setPriceSelector1((String) stepExecution.getJobExecution().getJobParameters().getString("priceSelector1"));
+    	batchSchedule.get().setPriceSelector2((String) stepExecution.getJobExecution().getJobParameters().getString("priceSelector2"));
+    	batchSchedule.get().setPriceSelector3((String) stepExecution.getJobExecution().getJobParameters().getString("priceSelector3"));
+    	batchSchedule.get().setPriceLocation(stepExecution.getJobExecution().getJobParameters().getString("priceLocation") != null? Integer.parseInt((String) stepExecution.getJobExecution().getJobParameters().getString("priceLocation")) : 0);
+    	batchSchedule.get().setDeliveryFeeSelector1((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeSelector1"));
+    	batchSchedule.get().setDeliveryFeeSelector2((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeSelector2"));
+    	batchSchedule.get().setDeliveryFeeSelector3((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeSelector3"));
+    	batchSchedule.get().setDeliveryFeeLocation(stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeLocation") != null? Integer.parseInt((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeLocation")) : 0);
+    	batchSchedule.get().setSellerSelector1((String) stepExecution.getJobExecution().getJobParameters().getString("sellerSelector1"));
+    	batchSchedule.get().setSellerSelector2((String) stepExecution.getJobExecution().getJobParameters().getString("sellerSelector2"));
+    	batchSchedule.get().setSellerSelector3((String) stepExecution.getJobExecution().getJobParameters().getString("sellerSelector3"));
+    	batchSchedule.get().setSellerLocation(stepExecution.getJobExecution().getJobParameters().getString("sellerLocation") != null? Integer.parseInt((String) stepExecution.getJobExecution().getJobParameters().getString("sellerLocation")) : 0);
+    	batchSchedule.get().setUrlSelector1((String) stepExecution.getJobExecution().getJobParameters().getString("urlSelector1"));
+    	batchSchedule.get().setUrlSelector2((String) stepExecution.getJobExecution().getJobParameters().getString("urlSelector2"));
+    	batchSchedule.get().setUrlSelector3((String) stepExecution.getJobExecution().getJobParameters().getString("urlSelector3"));
+    	batchSchedule.get().setNextButtonSelector((String) stepExecution.getJobExecution().getJobParameters().getString("nextButtonSelector"));
+    	batchSchedule.get().setImageSelector((String) stepExecution.getJobExecution().getJobParameters().getString("imageSelector"));
     	
     	log.get().info("url : " + batchSchedule.get().getUrl());
-    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
-    		totalSize.set(0);
-    		totalSkippedSize.set(0);
-    		runSelenium(log.get(), goodsService);
-    	}
-        return RepeatStatus.FINISHED;
-    }
-    
-    public static void infiniteScroll(Logger log) {
+    	totalSize.set(0);
+		totalSkippedSize.set(0);
+		pageNumber.set(1);
+	}
+
+	@Override
+	public ExitStatus afterStep(StepExecution stepExecution) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	public static void infiniteScroll(Logger log) {
         JavascriptExecutor js = (JavascriptExecutor) driver.get();
         long currentHeight = 0;
         while (true) {
@@ -119,8 +177,8 @@ public class TestTasklet implements Tasklet {
         }
     }
     
-    private static void crawling(Logger log, int pageNumber, GoodsService goodsService) {
-    	log.info("Current PageNumber : " + pageNumber);
+    private static List<Goods> crawling(Logger log) {
+    	log.info("Current PageNumber : " + pageNumber.get());
     	// 5. 페이지 로딩을 위한 최대 1초 대기
         driver.get().manage().timeouts().implicitlyWait(100, TimeUnit.MILLISECONDS);
         
@@ -218,37 +276,10 @@ public class TestTasklet implements Tasklet {
             }
         }
         
-        goodsService.insertGoodsList(goodsList);
         log.info("target : " + bestContests.size() + ", inserted : " + (bestContests.size() - skippedCount) + ", error : " + skippedCount);
         
         log.info("#### crawling END ####");
-    }
-    
-    public static void navigateToLastPage(Logger log, GoodsService goodsService) {
-    	int pageNumber = 1;
-    	crawling(log, pageNumber, goodsService);
-        while (true) {
-            // 페이지에서 다음 버튼을 찾아 클릭합니다.
-            WebElement nextButton = findNextButton();
-            if (nextButton == null) {
-            	// 8. WebDriver 종료
-                driver.get().quit();
-                
-                log.info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
-                log.info("#### driver END ####");
-                
-                break;
-            }
-            nextButton.click();
-            pageNumber++;
-            crawling(log, pageNumber, goodsService);
-            try {
-                Thread.sleep(2000); // 1초 대기
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
-            }
-        }
+        return goodsList;
     }
 
     private static WebElement findNextButton() {
@@ -265,31 +296,5 @@ public class TestTasklet implements Tasklet {
     		return null;
     	}
     }
-    
-    private static void runSelenium(Logger log, GoodsService goodsService) throws Exception {
-    	log.info("#### START ####");
-        
-    	// 1. WebDriver 경로 설정
-        // Path path = Paths.get("driver\\geckodriver");
-    	Path path = Paths.get("driver//geckodriver");
-        System.setProperty("webdriver.gecko.driver", path.toString());
-        
-        // 2. WebDriver 옵션 설정
-        FirefoxOptions options = new FirefoxOptions();
-        options.addArguments("--start-maximized");          // 최대크기로
-        options.addArguments("--headless");                 // Browser를 띄우지 않음
-        options.addArguments("--disable-gpu");              // GPU를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
-        options.addArguments("--no-sandbox");               // Sandbox 프로세스를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
-        options.addArguments("--disable-popup-blocking");    // 팝업 무시
-        options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
-        options.addArguments("--disable-default-apps");     // 기본앱 사용안함
-        
-        // 3. WebDriver 객체 생성
-        driver.set(new FirefoxDriver( options ));
-        
-        // 4. 웹페이지 요청
-        driver.get().get(batchSchedule.get().getUrl());
-        
-        navigateToLastPage(log, goodsService);
-    }
+
 }

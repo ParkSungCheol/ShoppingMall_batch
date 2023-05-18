@@ -1,5 +1,7 @@
 package com.example.batch.job;
 
+import java.util.List;
+
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -11,9 +13,11 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 
-import com.example.batch.Service.GoodsService;
+import com.example.batch.Domain.Goods;
+import com.example.batch.chunk.DataProcessor;
+import com.example.batch.chunk.MyBatisItemWriter;
+import com.example.batch.chunk.WebCrawlingReader;
 import com.example.batch.config.JobCompletionNotificationListener;
-import com.example.batch.tasklet.TestTasklet;
 
 /*
 --job.name=incrementerJob
@@ -38,7 +42,11 @@ public class SimpleJobConfiguration {
 	@Autowired
 	JobRepository jobRepository;
 	@Autowired
-	GoodsService goodsService;
+	WebCrawlingReader webCrawlingReader;
+	@Autowired
+	DataProcessor dataProcessor;
+	@Autowired
+	MyBatisItemWriter myBatisItemWriter;
 
     public Job myJob() {
         return this.jobBuilderFactory.get("myJob")
@@ -52,7 +60,10 @@ public class SimpleJobConfiguration {
 
     public Step myStep() {
         return stepBuilderFactory.get("myStep")
-                .tasklet(new TestTasklet(goodsService))
+        		.<List<Goods>, List<Goods>>chunk(1) // Chunk 사이즈 설정
+                .reader(webCrawlingReader)
+                .processor(dataProcessor)
+                .writer(myBatisItemWriter)
                 .build();
     }
 }
