@@ -70,12 +70,13 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
                     i.printStackTrace();
                 }
     		}
-    		String errorMsg = "";
-    		for(String error : errorString) {
-    			errorMsg  = errorMsg + error + "\n";
+    		if(errorString.size() > 0) {
+    			String errorMsg = "";
+    			for(String error : errorString) {
+        			errorMsg  = errorMsg + error + "\n";
+        		}
+        		phoneService.sendMessage(errorMsg);
     		}
-    		phoneService.sendMessage(errorMsg);
-    		
     		tte.shutdown();
     	}
     }
