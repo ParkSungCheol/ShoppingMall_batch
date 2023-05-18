@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+.gitsecret/keys/random_seed
+!*.secret
+src/main/resources/application.yml

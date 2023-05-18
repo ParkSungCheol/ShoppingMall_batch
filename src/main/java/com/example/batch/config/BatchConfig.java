@@ -19,10 +19,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 public class BatchConfig implements BatchConfigurer {
 
-	private final DataSource dataSource;
+	private final TrackedDataSource dataSource;
 	private TaskExecutor taskExecutor;
 	
-	public BatchConfig(DataSource dataSource) {
+	public BatchConfig(TrackedDataSource dataSource) {
         this.dataSource = dataSource;
     }
 	
