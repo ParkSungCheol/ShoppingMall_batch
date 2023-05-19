@@ -18,6 +18,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ExitStatus;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ItemReader;
@@ -133,7 +134,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	@Override
 	public ExitStatus afterStep(StepExecution stepExecution) {
 		// TODO Auto-generated method stub
-		return null;
+		JobExecution jobExecution = stepExecution.getJobExecution();
+        jobExecution.getExecutionContext().put("totalSize", totalSize.get());
+        jobExecution.getExecutionContext().put("totalSkippedSize", totalSkippedSize.get());
+        
+		return ExitStatus.COMPLETED;
 	}
 	
 	public static void infiniteScroll(Logger log) {
