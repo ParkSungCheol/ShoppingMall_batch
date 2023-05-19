@@ -58,8 +58,8 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 			msg += jobExecution.getAllFailureExceptions().get(0).getMessage();
 		}
 		else if(jobExecution.getStatus() == BatchStatus.COMPLETED) {
-			int totalSize = Integer.parseInt((String) jobExecution.getExecutionContext().get("totalSize"));
-			int totalSkippedSize = Integer.parseInt((String) jobExecution.getExecutionContext().get("totalSkippedSize"));
+			int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
+			int totalSkippedSize = (int) jobExecution.getExecutionContext().get("totalSkippedSize");
 			msg += "COMPLETED\n";
 			msg += "totalSize : " + totalSize + "\n";
 			msg += "insertedSize : " + (totalSize - totalSkippedSize) + "\n";
