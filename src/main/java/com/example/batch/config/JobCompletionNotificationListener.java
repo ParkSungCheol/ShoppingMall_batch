@@ -2,6 +2,7 @@ package com.example.batch.config;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import org.slf4j.Logger;
@@ -55,24 +56,28 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
 		int totalSkippedSize = (int) jobExecution.getExecutionContext().get("totalSkippedSize");
 		Date startTime = jobExecution.getStartTime();
+		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+	    String startFormattedTime = dateFormat.format(startTime);
         Date endTime = jobExecution.getEndTime();
         long executionTime = endTime.getTime() - startTime.getTime();
-        String formattedTime = formatExecutionTime(executionTime);
+        String executionFormattedTime = formatExecutionTime(executionTime);
 		if(jobExecution.getStatus() == BatchStatus.FAILED) {
 			log.info("############## FAILED ###############");
-			msg += "FAILED\n";
+			msg += "FAILED ";
 			msg += "totalSize : " + totalSize + "\n";
-			msg += "insertedSize : " + (totalSize - totalSkippedSize) + "\n";
+			msg += "insertedSize : " + (totalSize - totalSkippedSize) + " ";
 			msg += "totalSkippedSize : " + totalSkippedSize + "\n";
-			msg += "runTime : " + formattedTime + "\n";
+			msg += "startTime : " + startFormattedTime + "\n";
+			msg += "runTime : " + executionFormattedTime + "\n";
 			msg += "[ errorLog ]\n" + jobExecution.getAllFailureExceptions().get(0).getMessage();
 		}
 		else if(jobExecution.getStatus() == BatchStatus.COMPLETED) {
-			msg += "COMPLETED\n";
+			msg += "COMPLETED ";
 			msg += "totalSize : " + totalSize + "\n";
-			msg += "insertedSize : " + (totalSize - totalSkippedSize) + "\n";
-			msg += "totalSkippedSize : " + totalSkippedSize;
-			msg += "runTime : " + formattedTime + "\n";
+			msg += "insertedSize : " + (totalSize - totalSkippedSize) + " ";
+			msg += "totalSkippedSize : " + totalSkippedSize + "\n";
+			msg += "startTime : " + startFormattedTime + "\n";
+			msg += "runTime : " + executionFormattedTime + "\n";
 			flag = 1;
 		}
 		slackService.call(flag, msg);
