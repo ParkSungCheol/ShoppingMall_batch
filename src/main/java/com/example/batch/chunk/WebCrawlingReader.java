@@ -50,7 +50,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     			log.get().info("#### START ####");
     	        
     	    	// 1. WebDriver 경로 설정
-    	    	Path path = Paths.get("driver//geckodriver.exe");
+    	    	Path path = Paths.get("driver//geckodriver");
     	        System.setProperty("webdriver.gecko.driver", path.toString());
     	        
     	        // 2. WebDriver 옵션 설정
