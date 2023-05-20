@@ -2,8 +2,9 @@ package com.example.batch.config;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
@@ -12,10 +13,12 @@ import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
-
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleService;
-import com.example.batch.Service.ChatBotService;
+import net.gpedro.integrations.slack.SlackApi;
+import net.gpedro.integrations.slack.SlackAttachment;
+import net.gpedro.integrations.slack.SlackField;
+import net.gpedro.integrations.slack.SlackMessage;
 
 @Component
 public class JobCompletionNotificationListener implements JobExecutionListener {
@@ -24,15 +27,19 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private Connection connection;
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private TaskExecutor taskExecutor;
-    private ChatBotService botService;
     private static int jobCount;
+    private SlackApi slackApi;
+    private SlackAttachment slackAttachment;
+    private SlackMessage slackMessage;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, ChatBotService botService) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackApi slackApi, SlackAttachment slackAttachment, SlackMessage slackMessage) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList();
         jobCount = batchSchedules.size();
-        this.botService = botService;
+        this.slackApi = slackApi;
+        this.slackAttachment = slackAttachment;
+        this.slackMessage = slackMessage;
     }
 
     @Override
@@ -65,12 +72,15 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 			msg += "insertedSize : " + (totalSize - totalSkippedSize) + "\n";
 			msg += "totalSkippedSize : " + totalSkippedSize;
 		}
-		try {
-			botService.sendSlack(msg);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		slackAttachment.setText(msg);
+        slackAttachment.setFields(
+                List.of(
+                        new SlackField().setTitle("Request Time").setValue(new Date().toString())
+                )
+        );
+        slackMessage.setAttachments(Collections.singletonList(slackAttachment));
+        slackApi.call(slackMessage);
+        
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	if(jobCount == 0) {
     		List<Connection> connections = dataSource.getAllConnections();

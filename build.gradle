@@ -26,7 +26,8 @@ dependencies {
 	implementation group: 'org.seleniumhq.selenium', name: 'selenium-java', version: '3.141.59'
 	implementation group: 'org.json', name: 'json', version: '20160810'
 	implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
-	implementation("com.slack.api:slack-api-client:1.29.2")
+	 // Slack
+    implementation "net.gpedro.integrations.slack:slack-webhook:1.4.0"
 	
 }
 

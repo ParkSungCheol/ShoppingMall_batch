@@ -1,6 +1,9 @@
 package com.example.batch;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleService;
 import com.example.batch.job.SimpleJobConfiguration;
+import net.gpedro.integrations.slack.SlackApi;
+import net.gpedro.integrations.slack.SlackAttachment;
+import net.gpedro.integrations.slack.SlackField;
+import net.gpedro.integrations.slack.SlackMessage;
 
 @SpringBootApplication
 public class BatchApplication implements CommandLineRunner {
@@ -27,6 +34,12 @@ public class BatchApplication implements CommandLineRunner {
 	SimpleJobConfiguration simpleJobConfiguration; 
 	@Autowired
     private TaskExecutor taskExecutor;
+	@Autowired
+    private SlackApi slackApi;
+	@Autowired
+    private SlackAttachment slackAttachment;
+    @Autowired
+    private SlackMessage slackMessage;
 	@Autowired
 	private BatchScheduleService batchScheduleService;
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
@@ -89,6 +102,20 @@ public class BatchApplication implements CommandLineRunner {
 	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
                     } catch(Exception e) {
                     	e.printStackTrace();
+                    	String msg = "";
+                    	msg += "FAILED\n";
+                    	msg += Arrays.toString(e.getStackTrace());
+                        slackAttachment.setText(msg);
+
+                        slackAttachment.setFields(
+                                List.of(
+                                        new SlackField().setTitle("Request Time").setValue(new Date().toString())
+                                )
+                        );
+
+                        slackMessage.setAttachments(Collections.singletonList(slackAttachment));
+
+                        slackApi.call(slackMessage);
                     	SpringApplication.exit(context);
 //                    	System.exit(1);
                     }
