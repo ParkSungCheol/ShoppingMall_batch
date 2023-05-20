@@ -1,7 +1,5 @@
 package com.example.batch.chunk;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,10 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
@@ -25,9 +20,11 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
+import com.example.batch.config.WebDriverManager;
 
 @Component
 public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecutionListener {
@@ -38,8 +35,15 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<Integer> totalSize = new ThreadLocal<>();
     private static final ThreadLocal<Integer> totalSkippedSize = new ThreadLocal<>();
     private static final ThreadLocal<BatchSchedule> batchSchedule = new ThreadLocal<>();
-    private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> driver_num = new ThreadLocal<>();
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
+    private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
+    private static WebDriverManager webDriverManager;
+    
+    public WebCrawlingReader(WebDriverManager webDriverManager) {
+		// TODO Auto-generated constructor stub
+    	WebCrawlingReader.webDriverManager = webDriverManager;
+	}
     
 	@Override
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
@@ -49,25 +53,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     		if(totalSize.get() == 0) {
     			log.get().info("#### START ####");
     	        
-    	    	// 1. WebDriver 경로 설정
-    	    	Path path = Paths.get("driver//geckodriver");
-    	        System.setProperty("webdriver.gecko.driver", path.toString());
-    	        
-    	        // 2. WebDriver 옵션 설정
-    	        FirefoxOptions options = new FirefoxOptions();
-    	        options.addArguments("--start-maximized");          // 최대크기로
-    	        options.addArguments("--headless");                 // Browser를 띄우지 않음
-    	        options.addArguments("--disable-gpu");              // GPU를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
-    	        options.addArguments("--no-sandbox");               // Sandbox 프로세스를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
-    	        options.addArguments("--disable-popup-blocking");    // 팝업 무시
-    	        options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
-    	        options.addArguments("--disable-default-apps");     // 기본앱 사용안함
-    	        
-    	        // 3. WebDriver 객체 생성
-    	        driver.set(new FirefoxDriver( options ));
+    			// 3. WebDriver 객체 생성
+    			driver_num.set(webDriverManager.createDriver());
+    	        jobExecution.get().getExecutionContext().put("driver_num", driver_num.get());
     	        
     	        // 4. 웹페이지 요청
-    	        driver.get().get(batchSchedule.get().getUrl());
+    	        webDriverManager.getDriver(driver_num.get()).get(batchSchedule.get().getUrl());
     	        
     	        return crawling(log.get());
     		}
@@ -75,7 +66,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     			WebElement nextButton = findNextButton();
                 if (nextButton == null) {
                 	// 8. WebDriver 종료
-                    driver.get().quit();
+                	webDriverManager.quitDriver(driver_num.get());
                     
                     log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
                     log.get().info("#### driver END ####");
@@ -129,6 +120,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	totalSize.set(0);
 		totalSkippedSize.set(0);
 		pageNumber.set(1);
+		jobExecution.set(stepExecution.getJobExecution());
 	}
 
 	@Override
@@ -142,7 +134,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	}
 	
 	public static void infiniteScroll(Logger log) {
-        JavascriptExecutor js = (JavascriptExecutor) driver.get();
+        JavascriptExecutor js = (JavascriptExecutor) webDriverManager.getDriver(driver_num.get());
         long currentHeight = 0;
         while (true) {
         	long scrollHeight = (long) js.executeScript("return document.body.scrollHeight");
@@ -185,10 +177,10 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static List<Goods> crawling(Logger log) {
     	log.info("Current PageNumber : " + pageNumber.get());
     	// 5. 페이지 로딩을 위한 최대 1초 대기
-        driver.get().manage().timeouts().implicitlyWait(100, TimeUnit.MILLISECONDS);
+    	webDriverManager.getDriver(driver_num.get()).manage().timeouts().implicitlyWait(100, TimeUnit.MILLISECONDS);
         
         // 6. 조회, 로드될 때까지 최대 5초 대기
-        WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
+        WebDriverWait wait = new WebDriverWait(webDriverManager.getDriver(driver_num.get()), Duration.ofSeconds(10));
         
         infiniteScroll(log);
         
@@ -290,7 +282,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static WebElement findNextButton() {
         // TODO: 다음 버튼을 찾아서 반환하는 코드 작성
     	String byFunKey = "CSSSELECTOR";
-    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
+    	WebDriverWait wait = new WebDriverWait(webDriverManager.getDriver(driver_num.get()), Duration.ofSeconds(10));
     	String selectString = batchSchedule.get().getNextButtonSelector();
     	try {
     	WebElement target = wait.until(ExpectedConditions.presenceOfElementLocated( 

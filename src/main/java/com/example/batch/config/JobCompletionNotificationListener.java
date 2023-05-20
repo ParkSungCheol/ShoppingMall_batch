@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -29,13 +30,15 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private TaskExecutor taskExecutor;
     private static int jobCount;
     private SlackService slackService;
+    private WebDriverManager webDriverManager;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList();
         jobCount = batchSchedules.size();
         this.slackService = slackService;
+        this.webDriverManager = webDriverManager;
     }
 
     @Override
@@ -52,6 +55,9 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 
     @Override
     public void afterJob(JobExecution jobExecution){
+    	if(jobExecution.getExecutionContext().get("driver_num") != null)
+    		webDriverManager.quitDriver((int) jobExecution.getExecutionContext().get("driver_num"));
+    	
     	jobCount--;
     	log.info("jobCount : {}", jobCount);
     	String msg = "result : ";
@@ -100,6 +106,8 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
                 }
     		}
     		tte.shutdown();
+    		
+    		webDriverManager.quitAllDrivers();
     	}
     }
     

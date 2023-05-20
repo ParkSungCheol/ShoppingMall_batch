@@ -31,7 +31,6 @@ public class SlackService {
     
     public void call(int flag, String msg) {
     	
-    	log.error("flag == 0 : {{}}", flag);
     	// Failed
     	if(flag == 0) {
     		slackAttachment.setFallback("Failed");
