@@ -2,9 +2,12 @@ package com.example.batch.config;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
@@ -56,8 +59,11 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
 		int totalSkippedSize = (int) jobExecution.getExecutionContext().get("totalSkippedSize");
 		Date startTime = jobExecution.getStartTime();
-		SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-	    String startFormattedTime = dateFormat.format(startTime);
+		// 대한민국 표준시(KST)로 변환하기
+        TimeZone kstTimeZone = TimeZone.getTimeZone("Asia/Seoul");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateFormat.setTimeZone(kstTimeZone);
+        String startFormattedTime = dateFormat.format(startTime);
         Date endTime = jobExecution.getEndTime();
         long executionTime = endTime.getTime() - startTime.getTime();
         String executionFormattedTime = formatExecutionTime(executionTime);
