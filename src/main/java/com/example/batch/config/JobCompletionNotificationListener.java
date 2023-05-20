@@ -2,6 +2,7 @@ package com.example.batch.config;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,12 +54,17 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	int flag = 0;
     	int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
 		int totalSkippedSize = (int) jobExecution.getExecutionContext().get("totalSkippedSize");
+		Date startTime = jobExecution.getStartTime();
+        Date endTime = jobExecution.getEndTime();
+        long executionTime = endTime.getTime() - startTime.getTime();
+        String formattedTime = formatExecutionTime(executionTime);
 		if(jobExecution.getStatus() == BatchStatus.FAILED) {
 			log.info("############## FAILED ###############");
 			msg += "FAILED\n";
 			msg += "totalSize : " + totalSize + "\n";
 			msg += "insertedSize : " + (totalSize - totalSkippedSize) + "\n";
 			msg += "totalSkippedSize : " + totalSkippedSize + "\n";
+			msg += "runTime : " + formattedTime + "\n";
 			msg += "[ errorLog ]\n" + jobExecution.getAllFailureExceptions().get(0).getMessage();
 		}
 		else if(jobExecution.getStatus() == BatchStatus.COMPLETED) {
@@ -66,6 +72,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 			msg += "totalSize : " + totalSize + "\n";
 			msg += "insertedSize : " + (totalSize - totalSkippedSize) + "\n";
 			msg += "totalSkippedSize : " + totalSkippedSize;
+			msg += "runTime : " + formattedTime + "\n";
 			flag = 1;
 		}
 		slackService.call(flag, msg);
@@ -83,5 +90,18 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		}
     		tte.shutdown();
     	}
+    }
+    
+    public String formatExecutionTime(long executionTime) {
+        long seconds = executionTime / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        
+        long remainingSeconds = seconds % 60;
+        long remainingMinutes = minutes % 60;
+        
+        String formattedTime = String.format("%02d:%02d:%02d", hours, remainingMinutes, remainingSeconds);
+        
+        return formattedTime;
     }
 }
