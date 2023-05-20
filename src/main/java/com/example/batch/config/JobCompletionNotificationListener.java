@@ -95,7 +95,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 		slackService.call(flag, msg);
         
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
-    	if(jobCount == 0) {
+    	if(jobCount == 0 || jobExecution.getStatus() == BatchStatus.FAILED) {
     		List<Connection> connections = dataSource.getAllConnections();
     		for(Connection connection : connections) {
     			try {
