@@ -20,7 +20,6 @@ import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
@@ -268,7 +267,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             		e.printStackTrace();
             		skippedCount++;
             		totalSkippedSize.set(totalSkippedSize.get() + 1);
-            		continue;
+            		throw e;
             	}
             }
         }

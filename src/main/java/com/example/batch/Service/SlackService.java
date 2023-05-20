@@ -6,9 +6,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Component;
+
 import net.gpedro.integrations.slack.SlackApi;
 import net.gpedro.integrations.slack.SlackAttachment;
 import net.gpedro.integrations.slack.SlackField;
@@ -20,7 +20,6 @@ public class SlackService {
     private SlackApi slackApi;
     private SlackAttachment slackAttachment;
     private SlackMessage slackMessage;
-	private Logger log = LoggerFactory.getLogger(this.getClass());
 	
 	public SlackService(SlackApi slackApi) {
 		// TODO Auto-generated constructor stub
