@@ -1,21 +1,13 @@
 package com.example.batch;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -25,10 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleService;
 import com.example.batch.job.SimpleJobConfiguration;
-import net.gpedro.integrations.slack.SlackApi;
-import net.gpedro.integrations.slack.SlackAttachment;
-import net.gpedro.integrations.slack.SlackField;
-import net.gpedro.integrations.slack.SlackMessage;
 
 @SpringBootApplication
 public class BatchApplication implements CommandLineRunner {
@@ -39,14 +27,6 @@ public class BatchApplication implements CommandLineRunner {
 	SimpleJobConfiguration simpleJobConfiguration; 
 	@Autowired
     private TaskExecutor taskExecutor;
-	@Autowired
-    private SlackApi slackApi;
-	@Autowired
-	@Qualifier("slackAttachment_failed")
-    private SlackAttachment slackAttachment;
-    @Autowired
-    @Qualifier("slackMessage_failed")
-    private SlackMessage slackMessage;
 	@Autowired
 	private BatchScheduleService batchScheduleService;
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
@@ -109,27 +89,6 @@ public class BatchApplication implements CommandLineRunner {
 	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
                     } catch(Exception e) {
                     	e.printStackTrace();
-                    	String msg = "";
-                    	msg += "FAILED\n";
-                    	msg += Arrays.toString(e.getStackTrace());
-                        slackAttachment.setText(msg);
-
-                        // 현재 날짜와 시간 가져오기
-                        Date currentDate = new Date();
-                        // 대한민국 표준시(KST)로 변환하기
-                        TimeZone kstTimeZone = TimeZone.getTimeZone("Asia/Seoul");
-                        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        dateFormat.setTimeZone(kstTimeZone);
-                        String kstDateTime = dateFormat.format(currentDate);
-                        slackAttachment.setFields(
-                                List.of(
-                                        new SlackField().setTitle("Request Time").setValue(kstDateTime)
-                                )
-                        );
-
-                        slackMessage.setAttachments(Collections.singletonList(slackAttachment));
-
-                        slackApi.call(slackMessage);
                     	SpringApplication.exit(context);
 //                    	System.exit(1);
                     }
