@@ -1,16 +1,21 @@
 package com.example.batch;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -37,8 +42,10 @@ public class BatchApplication implements CommandLineRunner {
 	@Autowired
     private SlackApi slackApi;
 	@Autowired
+	@Qualifier("slackAttachment_failed")
     private SlackAttachment slackAttachment;
     @Autowired
+    @Qualifier("slackMessage_failed")
     private SlackMessage slackMessage;
 	@Autowired
 	private BatchScheduleService batchScheduleService;
@@ -107,9 +114,16 @@ public class BatchApplication implements CommandLineRunner {
                     	msg += Arrays.toString(e.getStackTrace());
                         slackAttachment.setText(msg);
 
+                        // 현재 날짜와 시간 가져오기
+                        Date currentDate = new Date();
+                        // 대한민국 표준시(KST)로 변환하기
+                        TimeZone kstTimeZone = TimeZone.getTimeZone("Asia/Seoul");
+                        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        dateFormat.setTimeZone(kstTimeZone);
+                        String kstDateTime = dateFormat.format(currentDate);
                         slackAttachment.setFields(
                                 List.of(
-                                        new SlackField().setTitle("Request Time").setValue(new Date().toString())
+                                        new SlackField().setTitle("Request Time").setValue(kstDateTime)
                                 )
                         );
 

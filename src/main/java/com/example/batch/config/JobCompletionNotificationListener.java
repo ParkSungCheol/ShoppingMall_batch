@@ -2,14 +2,19 @@ package com.example.batch.config;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -32,7 +37,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private SlackAttachment slackAttachment;
     private SlackMessage slackMessage;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackApi slackApi, SlackAttachment slackAttachment, SlackMessage slackMessage) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackApi slackApi, @Qualifier("slackAttachment_completed") SlackAttachment slackAttachment, @Qualifier("slackMessage_completed") SlackMessage slackMessage) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList();
@@ -73,9 +78,16 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 			msg += "totalSkippedSize : " + totalSkippedSize;
 		}
 		slackAttachment.setText(msg);
+		// 현재 날짜와 시간 가져오기
+        Date currentDate = new Date();
+        // 대한민국 표준시(KST)로 변환하기
+        TimeZone kstTimeZone = TimeZone.getTimeZone("Asia/Seoul");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateFormat.setTimeZone(kstTimeZone);
+        String kstDateTime = dateFormat.format(currentDate);
         slackAttachment.setFields(
                 List.of(
-                        new SlackField().setTitle("Request Time").setValue(new Date().toString())
+                        new SlackField().setTitle("Request Time").setValue(kstDateTime)
                 )
         );
         slackMessage.setAttachments(Collections.singletonList(slackAttachment));
