@@ -17,6 +17,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleService;
+import com.example.batch.Service.SlackService;
 
 @Component
 public class JobCompletionNotificationListener implements JobExecutionListener {
@@ -26,15 +27,15 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private TaskExecutor taskExecutor;
     private static int jobCount;
-//    private SlackService slackService;
+    private SlackService slackService;
 //    private WebDriverManager webDriverManager;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList();
         jobCount = batchSchedules.size();
-//        this.slackService = slackService;
+        this.slackService = slackService;
 //        this.webDriverManager = webDriverManager;
     }
 
@@ -89,7 +90,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 			msg += "runTime : " + executionFormattedTime + "\n";
 			flag = 1;
 		}
-//		slackService.call(flag, msg);
+		slackService.call(flag, msg);
         
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	if(jobCount == 0) {
