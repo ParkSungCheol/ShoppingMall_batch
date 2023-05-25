@@ -1,15 +1,13 @@
 package com.example.batch.Domain;
 
 import java.sql.Timestamp;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.Data;
 
 @Data
 public class Goods {
 	@JsonProperty
-    private int rownum;
+    private int id;
 	@JsonProperty
     private String name;
 	@JsonProperty
@@ -25,16 +23,18 @@ public class Goods {
 	@JsonProperty
     private String sellid;
 	@JsonProperty
-	private Timestamp date;
-	@JsonProperty
     private String image;
 	@JsonProperty
     private String detail;
-	public int getRownum() {
-		return rownum;
+	@JsonProperty
+	private Timestamp modification_time;
+	@JsonProperty
+	private Timestamp insertion_time;
+	public int getId() {
+		return id;
 	}
-	public void setRownum(int rownum) {
-		this.rownum = rownum;
+	public void setId(int id) {
+		this.id = id;
 	}
 	public String getName() {
 		return name;
@@ -78,12 +78,6 @@ public class Goods {
 	public void setSellid(String sellid) {
 		this.sellid = sellid;
 	}
-	public Timestamp getDate() {
-		return date;
-	}
-	public void setDate(Timestamp date) {
-		this.date = date;
-	}
 	public String getImage() {
 		return image;
 	}
@@ -96,11 +90,23 @@ public class Goods {
 	public void setDetail(String detail) {
 		this.detail = detail;
 	}
+	public Timestamp getModification_time() {
+		return modification_time;
+	}
+	public void setModification_time(Timestamp modification_time) {
+		this.modification_time = modification_time;
+	}
+	public Timestamp getInsertion_time() {
+		return insertion_time;
+	}
+	public void setInsertion_time(Timestamp insertion_time) {
+		this.insertion_time = insertion_time;
+	}
 	@Override
 	public String toString() {
-		return "Goods [rownum=" + rownum + ", name=" + name + ", price=" + price + ", amount=" + amount
-				+ ", discountamount=" + discountamount + ", discountrate=" + discountrate + ", deliveryfee="
-				+ deliveryfee + ", sellid=" + sellid + ", date=" + date + ", image=" + image + ", detail=" + detail
-				+ "]";
+		return "Goods [id=" + id + ", name=" + name + ", price=" + price + ", amount=" + amount + ", discountamount="
+				+ discountamount + ", discountrate=" + discountrate + ", deliveryfee=" + deliveryfee + ", sellid="
+				+ sellid + ", image=" + image + ", detail=" + detail + ", modification_time=" + modification_time
+				+ ", insertion_time=" + insertion_time + "]";
 	}
 }
