@@ -277,8 +277,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     
                     // elements 요소들이 나타날 때까지 대기
                     List<WebElement> images = best.findElements(By.cssSelector("div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1) > img"));
-                    String image = images.get(0).getAttribute("src");
-                    goods.setImage(image);
+                    if(images.size() > 0) {
+                    	String image = images.get(0).getAttribute("src");
+                    	goods.setImage(image);
+                    }
+                    
             	}
             	catch(NoSuchElementException e) {
             		goodsList.remove(goodsList.size() - 1);
