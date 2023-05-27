@@ -34,6 +34,7 @@ public class BatchApplication implements CommandLineRunner {
     });
 	private static final int MAX_THREADS = 3;
 	private static ConfigurableApplicationContext context;
+	private static int autoNum = 0;
 	  
 	public static void main(String[] args) {
 		context = SpringApplication.run(BatchApplication.class, args);
@@ -84,6 +85,7 @@ public class BatchApplication implements CommandLineRunner {
                             .addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
                             .addString("imageSelector", batchSchedule.getImageSelector())
                             .addLong("time", System.currentTimeMillis())
+                            .addString("distinctNum", "" + ++autoNum)
                             .toJobParameters();
                     try {
 	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
