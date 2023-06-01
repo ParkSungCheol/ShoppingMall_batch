@@ -14,15 +14,6 @@ import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 @Configuration
 public class ElasticsearchConfig {
     @Bean
-    public ElasticsearchOperations elasticsearchOperations() {
-        ClientConfiguration clientConfiguration = ClientConfiguration.builder()
-                .connectedTo("ec2-54-180-119-204.ap-northeast-2.compute.amazonaws.com:3308")
-                .build();
-
-        return new ElasticsearchRestTemplate(RestClients.create(clientConfiguration).rest());
-    }
-    
-    @Bean
     public RestHighLevelClient client() {
     	return new RestHighLevelClient(
     		    RestClient.builder(
