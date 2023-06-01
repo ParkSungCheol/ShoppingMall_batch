@@ -28,7 +28,7 @@ dependencies {
 	implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
 	 // Slack
     implementation "net.gpedro.integrations.slack:slack-webhook:1.4.0"
-	
+	implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
 }
 
 tasks.named('test') {

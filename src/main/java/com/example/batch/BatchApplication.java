@@ -1,7 +1,23 @@
 package com.example.batch;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.Scroll;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobParameters;
@@ -16,6 +32,7 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleService;
+import com.example.batch.Service.GoodsService;
 import com.example.batch.job.SimpleJobConfiguration;
 
 @SpringBootApplication
@@ -27,6 +44,12 @@ public class BatchApplication implements CommandLineRunner {
 	SimpleJobConfiguration simpleJobConfiguration; 
 	@Autowired
     private TaskExecutor taskExecutor;
+	@Autowired
+	private GoodsService goodsService;
+	@Autowired
+	private RestHighLevelClient client;
+	private static final String INDEX_NAME = "goods";
+    private static final int BATCH_SIZE = 800;
 	@Autowired
 	private BatchScheduleService batchScheduleService;
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
@@ -44,6 +67,11 @@ public class BatchApplication implements CommandLineRunner {
 	@Transactional("txManager")
 	  public void run(String... args) throws Exception 
 	  {
+		//삭제로직
+		deleteDocumentsByQuery(client);
+        client.close();
+		goodsService.deleteGoodsList();
+		
 		List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList();
 		
 		int numThreads = Math.min(MAX_THREADS, batchSchedules.size());
@@ -99,4 +127,55 @@ public class BatchApplication implements CommandLineRunner {
         }
 
 	  }
+	
+	private void deleteDocumentsByQuery(RestHighLevelClient client) throws IOException {
+		// Create a search request
+        SearchRequest searchRequest = new SearchRequest(INDEX_NAME);
+
+        // Set the search query
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query(QueryBuilders.termQuery("is_deleted", 1));
+        searchSourceBuilder.size(BATCH_SIZE);
+        searchRequest.source(searchSourceBuilder);
+
+        // Set the scroll timeout
+        Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
+        searchRequest.scroll(scroll);
+
+        // Execute the search request
+        SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+        String scrollId = searchResponse.getScrollId();
+
+        // Process and delete documents in batches
+        BulkRequest bulkRequest = new BulkRequest();
+        while (searchResponse.getHits().getHits().length > 0) {
+            for (SearchHit hit : searchResponse.getHits().getHits()) {
+                String documentId = hit.getId();
+                DeleteRequest deleteRequest = new DeleteRequest(INDEX_NAME, documentId);
+                bulkRequest.add(deleteRequest);
+            }
+
+            // Delete documents in bulk
+            BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+            if (bulkResponse.hasFailures()) {
+                // Handle bulk delete failures
+            	log.get().info(bulkResponse.buildFailureMessage());
+            	break;
+            }
+
+            // Clear the bulk request
+            bulkRequest.requests().clear();
+
+            // Scroll to the next batch
+            SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
+            scrollRequest.scroll(scroll);
+            searchResponse = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+            scrollId = searchResponse.getScrollId();
+        }
+
+        // Clear the scroll
+        ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+        clearScrollRequest.addScrollId(scrollId);
+        ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+	}
 }

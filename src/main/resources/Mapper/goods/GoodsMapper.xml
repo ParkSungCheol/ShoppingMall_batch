@@ -29,4 +29,7 @@
 	    </foreach>
 	</insert>
 	
+	<delete id="deleteGoodsList">
+		DELETE FROM goods WHERE is_deleted = 1;
+	</delete>
 </mapper>

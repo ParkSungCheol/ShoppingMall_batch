@@ -20,4 +20,8 @@ public class GoodsService {
     public void insertGoodsList(List<Goods> goodsList) {
     	goodsMapper.insertGoodsList(goodsList);
     }
+    
+    public void deleteGoodsList() {
+    	goodsMapper.deleteGoodsList();
+    }
 }

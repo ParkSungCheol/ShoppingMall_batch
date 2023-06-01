@@ -10,4 +10,5 @@ import com.example.batch.Domain.Goods;
 @Mapper
 public interface GoodsMapper {
     void insertGoodsList(@Param("goodsList") List<Goods> goodsList);
+    void deleteGoodsList();
 }
