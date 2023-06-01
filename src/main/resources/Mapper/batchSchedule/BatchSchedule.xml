@@ -36,5 +36,6 @@
 			) SC
 		INNER JOIN BATCH_SITE SI
 		ON SC.BATCH_NAME = SI.BATCH_NAME
+		ORDER BY SC.BATCH_NUM
     </select>
 </mapper>
