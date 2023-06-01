@@ -121,6 +121,7 @@ public class BatchApplication implements CommandLineRunner {
                             .addString("urlSelector3", batchSchedule.getUrlSelector3())
                             .addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
                             .addString("imageSelector", batchSchedule.getImageSelector())
+                            .addString("account",  account)
                             .addLong("jobCount", (long) batchSchedules.size())
                             .addLong("time", System.currentTimeMillis())
                             .addString("distinctNum", "" + ++autoNum)

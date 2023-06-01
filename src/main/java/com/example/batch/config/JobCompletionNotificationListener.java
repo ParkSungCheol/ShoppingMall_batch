@@ -60,8 +60,9 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	jobCount--;
     	log.info("jobCount : {}", jobCount);
     	String url = (String) jobExecution.getExecutionContext().get("url");
+    	String account = (String) jobExecution.getExecutionContext().get("account");
     	log.info("url : {}", url);
-    	String msg = "result : ";
+    	String msg = "[account] " + account + "[url] " + url + "\n result : ";
     	int flag = 0;
     	int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
 		int totalSkippedSize = (int) jobExecution.getExecutionContext().get("totalSkippedSize");

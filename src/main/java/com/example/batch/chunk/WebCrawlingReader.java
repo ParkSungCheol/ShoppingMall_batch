@@ -43,6 +43,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static long jobCount;
+    private static String account;
 //    private static WebDriverManager webDriverManager;
     
 //    public WebCrawlingReader(WebDriverManager webDriverManager) {
@@ -138,7 +139,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	batchSchedule.get().setNextButtonSelector((String) stepExecution.getJobExecution().getJobParameters().getString("nextButtonSelector"));
     	batchSchedule.get().setImageSelector((String) stepExecution.getJobExecution().getJobParameters().getString("imageSelector"));
     	jobCount = (long) stepExecution.getJobExecution().getJobParameters().getLong("jobCount");
-    	
+    	account = (String) stepExecution.getJobExecution().getJobParameters().getString("account");
     	log.get().info("url : " + batchSchedule.get().getUrl());
     	totalSize.set(0);
 		totalSkippedSize.set(0);
@@ -154,6 +155,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         jobExecution.getExecutionContext().put("totalSkippedSize", totalSkippedSize.get());
         jobExecution.getExecutionContext().put("url", batchSchedule.get().getUrl());
         jobExecution.getExecutionContext().put("jobCount", jobCount);
+        jobExecution.getExecutionContext().put("account", account);
 		return ExitStatus.COMPLETED;
 	}
 	
