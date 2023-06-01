@@ -241,7 +241,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     List<WebElement> price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector1()));
                     if(price.size() == 0 && batchSchedule.get().getPriceSelector2() != null &&!batchSchedule.get().getPriceSelector2().equals("")) price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector2()));
                     if(price.size() == 0 && batchSchedule.get().getPriceSelector3() != null &&!batchSchedule.get().getPriceSelector3().equals("")) price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector3()));
-                    if(price == null) { throw new MyException("Price is null"); }
+                    if(price.size() == 0) { throw new MyException("Price is null"); }
                     String[] prices = price.get(0).getText().split("\n");
                     goods.setPrice(Integer.parseInt(prices[batchSchedule.get().getPriceLocation()].replaceAll("[^0-9]", "")));
                     
