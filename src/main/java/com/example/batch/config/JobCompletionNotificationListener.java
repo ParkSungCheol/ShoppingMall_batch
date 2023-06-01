@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
@@ -15,7 +16,7 @@ import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
-import com.example.batch.Domain.BatchSchedule;
+
 import com.example.batch.Service.BatchScheduleService;
 import com.example.batch.Service.SlackService;
 
@@ -42,6 +43,10 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	try {
             if (connection == null || connection.isClosed()) {
                 connection = dataSource.getConnection();
+                if(jobCount == -1) {
+            		long jobCount_param = (long) jobExecution.getExecutionContext().get("jobCount");
+            		jobCount = jobCount_param;
+            	}
                 log.info("db connection opened");
             }
         } catch (SQLException e) {
@@ -53,16 +58,12 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     public void afterJob(JobExecution jobExecution){
 //    	if(jobExecution.getExecutionContext().get("driver_num") != null)
 //    		webDriverManager.quitDriver((int) jobExecution.getExecutionContext().get("driver_num"));
-    	if(jobCount == -1) {
-    		long jobCount_param = (long) jobExecution.getExecutionContext().get("jobCount");
-    		jobCount = jobCount_param;
-    	}
     	jobCount--;
     	log.info("jobCount : {}", jobCount);
     	String url = (String) jobExecution.getExecutionContext().get("url");
     	String account = (String) jobExecution.getExecutionContext().get("account");
     	log.info("url : {}", url);
-    	String msg = "[account] " + account + "[url] " + url + "\n result : ";
+    	String msg = "[account] " + account + "\n[url] " + url + "\n[result] : ";
     	int flag = 0;
     	int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
 		int totalSkippedSize = (int) jobExecution.getExecutionContext().get("totalSkippedSize");
