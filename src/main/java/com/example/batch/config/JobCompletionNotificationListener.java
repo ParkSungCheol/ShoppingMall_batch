@@ -44,7 +44,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
             if (connection == null || connection.isClosed()) {
                 connection = dataSource.getConnection();
                 if(jobCount == -1) {
-            		long jobCount_param = (long) jobExecution.getExecutionContext().get("jobCount");
+            		long jobCount_param = (long) jobExecution.getJobParameters().getLong("jobCount");
             		jobCount = jobCount_param;
             	}
                 log.info("db connection opened");
