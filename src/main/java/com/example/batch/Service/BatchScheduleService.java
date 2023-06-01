@@ -17,7 +17,7 @@ public class BatchScheduleService {
 	@Autowired
     private BatchScheduleMapper batchScheduleMapper;
 
-    public List<BatchSchedule> getBatchScheduleList() {
-        return batchScheduleMapper.getBatchScheduleList();
+    public List<BatchSchedule> getBatchScheduleList(int startBatchNum, int endBatchNum) {
+        return batchScheduleMapper.getBatchScheduleList(startBatchNum, endBatchNum);
     }
 }

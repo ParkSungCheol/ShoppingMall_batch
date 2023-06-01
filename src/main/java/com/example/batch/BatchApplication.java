@@ -58,6 +58,9 @@ public class BatchApplication implements CommandLineRunner {
 	private static final int MAX_THREADS = 2;
 	private static ConfigurableApplicationContext context;
 	private static int autoNum = 0;
+	private static String account;
+	private static int startBatchNum;
+	private static int endBatchNum;
 	  
 	public static void main(String[] args) {
 		context = SpringApplication.run(BatchApplication.class, args);
@@ -67,12 +70,18 @@ public class BatchApplication implements CommandLineRunner {
 	@Transactional("txManager")
 	  public void run(String... args) throws Exception 
 	  {
+		if (args.length > 0) {
+            account = args[0];
+            startBatchNum = Integer.parseInt(args[1]);
+            endBatchNum = Integer.parseInt(args[2]);
+        }
+		
 		//삭제로직
 		deleteDocumentsByQuery(client);
         client.close();
 		goodsService.deleteGoodsList();
 		
-		List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList();
+		List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList(startBatchNum, endBatchNum);
 		
 		int numThreads = Math.min(MAX_THREADS, batchSchedules.size());
 
@@ -112,6 +121,7 @@ public class BatchApplication implements CommandLineRunner {
                             .addString("urlSelector3", batchSchedule.getUrlSelector3())
                             .addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
                             .addString("imageSelector", batchSchedule.getImageSelector())
+                            .addLong("jobCount", (long) batchSchedules.size())
                             .addLong("time", System.currentTimeMillis())
                             .addString("distinctNum", "" + ++autoNum)
                             .toJobParameters();

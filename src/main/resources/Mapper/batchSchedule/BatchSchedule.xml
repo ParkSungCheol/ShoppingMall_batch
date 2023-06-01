@@ -29,7 +29,11 @@
 		,	SI.URL_SELECTOR_3 AS url_selector_3
 		,	SI.NEXT_BUTTON_SELECTOR AS next_button_selector
 		,   SI.IMAGE_SELECTOR AS image_selector
-		FROM BATCH_SCHEDULE SC
+		FROM (
+			SELECT *
+			FROM BATCH_SCHEDULE
+			WHERE BATCH_NUM BETWEEN #{startBatchNum} AND #{endBatchNum}
+			) SC
 		INNER JOIN BATCH_SITE SI
 		ON SC.BATCH_NAME = SI.BATCH_NAME
     </select>

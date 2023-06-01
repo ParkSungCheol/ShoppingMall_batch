@@ -26,15 +26,13 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private Connection connection;
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private TaskExecutor taskExecutor;
-    private static int jobCount;
+    private static long jobCount = -1;
     private SlackService slackService;
 //    private WebDriverManager webDriverManager;
     
     public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
-        List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList();
-        jobCount = batchSchedules.size();
         this.slackService = slackService;
 //        this.webDriverManager = webDriverManager;
     }
@@ -55,9 +53,14 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     public void afterJob(JobExecution jobExecution){
 //    	if(jobExecution.getExecutionContext().get("driver_num") != null)
 //    		webDriverManager.quitDriver((int) jobExecution.getExecutionContext().get("driver_num"));
-    	
+    	if(jobCount == -1) {
+    		long jobCount_param = (long) jobExecution.getExecutionContext().get("jobCount");
+    		jobCount = jobCount_param;
+    	}
     	jobCount--;
     	log.info("jobCount : {}", jobCount);
+    	String url = (String) jobExecution.getExecutionContext().get("url");
+    	log.info("url : {}", url);
     	String msg = "result : ";
     	int flag = 0;
     	int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
