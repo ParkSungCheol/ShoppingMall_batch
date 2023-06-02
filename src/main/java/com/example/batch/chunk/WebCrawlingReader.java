@@ -206,7 +206,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 //    	webDriverManager.getDriver(driver_num.get()).manage().timeouts().implicitlyWait(100, TimeUnit.MILLISECONDS);
         
         // 6. 조회, 로드될 때까지 최대 5초 대기
-    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
+    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(100));
 //        WebDriverWait wait = new WebDriverWait(webDriverManager.getDriver(driver_num.get()), Duration.ofSeconds(10));
         
         infiniteScroll(log);
