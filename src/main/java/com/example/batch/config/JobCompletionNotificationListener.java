@@ -29,13 +29,13 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private TaskExecutor taskExecutor;
     private static long jobCount = -1;
     private SlackService slackService;
-//    private WebDriverManager webDriverManager;
+    private WebDriverManager webDriverManager;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
-//        this.webDriverManager = webDriverManager;
+        this.webDriverManager = webDriverManager;
     }
 
     @Override
@@ -56,8 +56,6 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 
     @Override
     public void afterJob(JobExecution jobExecution){
-//    	if(jobExecution.getExecutionContext().get("driver_num") != null)
-//    		webDriverManager.quitDriver((int) jobExecution.getExecutionContext().get("driver_num"));
     	jobCount--;
     	log.info("jobCount : {}", jobCount);
     	String url = (String) jobExecution.getExecutionContext().get("url");
@@ -99,6 +97,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
         
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	if(jobCount == 0) {
+    		webDriverManager.quitAllDrivers();
     		List<Connection> connections = dataSource.getAllConnections();
     		for(Connection connection : connections) {
     			try {
@@ -109,8 +108,6 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
                 }
     		}
     		tte.shutdown();
-    		
-//    		webDriverManager.quitAllDrivers();
     	}
     }
     

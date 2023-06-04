@@ -57,7 +57,7 @@ public class BatchApplication implements CommandLineRunner {
     });
 	private static final int MAX_THREADS = 2;
 	private static ConfigurableApplicationContext context;
-	private static int autoNum = 0;
+	private static int driver_num = -1;
 	private static String account;
 	private static int startBatchNum;
 	private static int endBatchNum;
@@ -93,6 +93,7 @@ public class BatchApplication implements CommandLineRunner {
 
             taskExecutor.execute(() -> {
             	log.get().info("batchSchedules SIZE : " + subList.size());
+            	driver_num++;
             	for (BatchSchedule batchSchedule : subList) {
                 	log.get().info("batchSchedules : " + batchSchedule.getUrl());
                     JobParameters jobParameters = new JobParametersBuilder()
@@ -124,7 +125,7 @@ public class BatchApplication implements CommandLineRunner {
                             .addString("account",  account)
                             .addLong("jobCount", (long) batchSchedules.size())
                             .addLong("time", System.currentTimeMillis())
-                            .addString("distinctNum", "" + ++autoNum)
+                            .addLong("driver_num", (long) driver_num)
                             .toJobParameters();
                     try {
 	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);

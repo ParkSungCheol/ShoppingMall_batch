@@ -28,6 +28,7 @@ import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.stereotype.Component;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
+import com.example.batch.config.WebDriverManager;
 import com.example.batch.exception.MyException;
 
 @Component
@@ -43,13 +44,14 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> driver_num = new ThreadLocal<>();
     private static String account;
-//    private static WebDriverManager webDriverManager;
+    private static WebDriverManager webDriverManager;
     
-//    public WebCrawlingReader(WebDriverManager webDriverManager) {
-//		// TODO Auto-generated constructor stub
-//    	WebCrawlingReader.webDriverManager = webDriverManager;
-//	}
+    public WebCrawlingReader(WebDriverManager webDriverManager) {
+		// TODO Auto-generated constructor stub
+    	WebCrawlingReader.webDriverManager = webDriverManager;
+	}
     
 	@Override
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
@@ -59,37 +61,17 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     		if(totalSize.get() == 0) {
     			log.get().info("#### START ####");
     			
-                // 1. WebDriver 경로 설정
-            	Path path = Paths.get("driver//geckodriver");
-                System.setProperty("webdriver.gecko.driver", path.toString());
-                
-                // 2. WebDriver 옵션 설정
-                FirefoxOptions options = new FirefoxOptions();
-                options.addArguments("--start-maximized");          // 최대크기로
-                options.addArguments("--headless");                 // Browser를 띄우지 않음
-                options.addArguments("--disable-gpu");              // GPU를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
-                options.addArguments("--no-sandbox");               // Sandbox 프로세스를 사용하지 않음, Linux에서 headless를 사용하는 경우 필요함.
-                options.addArguments("--disable-popup-blocking");    // 팝업 무시
-                options.addArguments("--blink-settings=imagesEnabled=false"); //이미지 다운 안받음
-                options.addArguments("--disable-default-apps");     // 기본앱 사용안함
-                
                 // 3. WebDriver 객체 생성
-                driver.set(new FirefoxDriver( options ));
-//    			driver_num.set(webDriverManager.createDriver());
-//    	        jobExecution.get().getExecutionContext().put("driver_num", driver_num.get());
+                driver.set(webDriverManager.getDriver(driver_num.get()));
                 
     	        // 4. 웹페이지 요청
                 driver.get().get(batchSchedule.get().getUrl());
-//    	        webDriverManager.getDriver(driver_num.get()).get(batchSchedule.get().getUrl());
     	        
     	        return crawling(log.get());
     		}
     		else {
     			WebElement nextButton = findNextButton();
                 if (nextButton == null) {
-                	// 8. WebDriver 종료
-                	driver.get().quit();
-//                	webDriverManager.quitDriver(driver_num.get());
                     
                     log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
                     log.get().info("#### driver END ####");
@@ -139,6 +121,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	batchSchedule.get().setNextButtonSelector((String) stepExecution.getJobExecution().getJobParameters().getString("nextButtonSelector"));
     	batchSchedule.get().setImageSelector((String) stepExecution.getJobExecution().getJobParameters().getString("imageSelector"));
     	account = (String) stepExecution.getJobExecution().getJobParameters().getString("account");
+    	driver_num.set(stepExecution.getJobExecution().getJobParameters().getLong("driver_num").intValue());
     	log.get().info("url : " + batchSchedule.get().getUrl());
     	totalSize.set(0);
 		totalSkippedSize.set(0);
