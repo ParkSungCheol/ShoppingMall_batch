@@ -219,7 +219,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     if(title.size() == 0 && batchSchedule.get().getTitleSelector2() != null &&!batchSchedule.get().getTitleSelector2().equals("")) title = best.findElements(By.cssSelector(batchSchedule.get().getTitleSelector2()));
                     if(title.size() == 0 && batchSchedule.get().getTitleSelector3() != null &&!batchSchedule.get().getTitleSelector3().equals("")) title = best.findElements(By.cssSelector(batchSchedule.get().getTitleSelector3()));
                     String[] titles = title.get(0).getText().split("\n");
-                    goods.setName(titles[batchSchedule.get().getTitleLocation()]);
+                    String name = removeSpecialCharacters(titles[batchSchedule.get().getTitleLocation()]);
+                    goods.setName(name);
                     
                     List<WebElement> price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector1()));
                     if(price.size() == 0 && batchSchedule.get().getPriceSelector2() != null &&!batchSchedule.get().getPriceSelector2().equals("")) price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector2()));
@@ -250,6 +251,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     String[] sellers = seller.get(0).getText().split("\n");
                     if(batchSchedule.get().getBatchName().equals("네이버쇼핑")) {
                     	String confirmSeller = sellers[batchSchedule.get().getSellerLocation()] == null || sellers[batchSchedule.get().getSellerLocation()].equals("") || sellers[batchSchedule.get().getSellerLocation()].equals("쇼핑몰별 최저가")? batchSchedule.get().getBatchName() : sellers[batchSchedule.get().getSellerLocation()];
+                    	confirmSeller = removeSpecialCharacters(confirmSeller);
                         goods.setSellid(confirmSeller);
                     }
                     else {
@@ -314,6 +316,13 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	} catch (Exception e) {
     		return null;
     	}
+    }
+    
+    public static String removeSpecialCharacters(String text) {
+        // 정규 표현식을 사용하여 특수 문자 제거
+        String pattern = "[^a-zA-Z0-9가-힣\\s]";
+        text = text.replaceAll(pattern, "");
+        return text;
     }
 
 }
