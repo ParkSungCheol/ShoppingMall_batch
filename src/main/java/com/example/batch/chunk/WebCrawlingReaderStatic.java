@@ -49,7 +49,8 @@ public class WebCrawlingReaderStatic implements ItemReader<List<Goods>>, StepExe
 				for(Element elem : elems) {
 //					log.get().info(elem.html());
 				}
-				log.get().info("pageNum : " + pageNum + "count : " + elems.size());
+				log.get().info("pageNum : " + pageNum + " count : " + elems.size());
+				pageNum++;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
