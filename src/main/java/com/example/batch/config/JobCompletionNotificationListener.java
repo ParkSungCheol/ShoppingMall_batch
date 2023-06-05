@@ -29,13 +29,13 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private TaskExecutor taskExecutor;
     private static long jobCount = -1;
     private SlackService slackService;
-    private WebDriverManager webDriverManager;
+//    private WebDriverManager webDriverManager;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
-        this.webDriverManager = webDriverManager;
+//        this.webDriverManager = webDriverManager;
     }
 
     @Override
@@ -97,8 +97,8 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
         
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	if(jobCount == 0) {
-    		webDriverManager.quitAllDrivers();
-    		log.info("#### driver END ####");
+//    		webDriverManager.quitAllDrivers();
+//    		log.info("#### driver END ####");
     		
     		List<Connection> connections = dataSource.getAllConnections();
     		for(Connection connection : connections) {
