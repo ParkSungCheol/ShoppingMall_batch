@@ -148,7 +148,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         	long scrollHeight = (long) js.executeScript("return document.body.scrollHeight");
         	
         	while (true) {
-        		currentHeight += 100;
+        		currentHeight += 10;
     		   js.executeScript("window.scrollTo(0, " + currentHeight + ")");
     		   try {
     		      Thread.sleep(100);
@@ -156,7 +156,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     		      e.printStackTrace();
     		      break;
     		   }
-    		   if(currentHeight + 100 > scrollHeight) {
+    		   if(currentHeight + 10 > scrollHeight) {
     			   js.executeScript("window.scrollTo(0, " + scrollHeight + ")");
         		   currentHeight = scrollHeight;
         		   try {
