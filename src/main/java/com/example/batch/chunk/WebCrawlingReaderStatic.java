@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,42 +36,24 @@ public class WebCrawlingReaderStatic implements ItemReader<List<Goods>>, StepExe
     
 	@Override
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
-		String URL = "https://finance.naver.com/item/main.nhn?code=005930";
+		String URL = batchSchedule.get().getUrl();
+		int pageNum = 1;
 		Document doc;
 
-		try {
-			doc = Jsoup.connect(URL).get();
-			Elements elem = doc.select(".date");
-			String[] str = elem.text().split(" ");
-
-			Elements todaylist =doc.select(".new_totalinfo dl>dd");
-			
-			String juga = todaylist.get(3).text().split(" ")[1];
-			String DungRakrate = todaylist.get(3).text().split(" ")[6];
-			String siga =  todaylist.get(5).text().split(" ")[1];
-			String goga = todaylist.get(6).text().split(" ")[1];
-			String zeoga = todaylist.get(8).text().split(" ")[1];
-			String georaeryang = todaylist.get(10).text().split(" ")[1];
-
-			String stype = todaylist.get(3).text().split(" ")[3]; //상한가,상승,보합,하한가,하락 구분
-
-			String vsyesterday = todaylist.get(3).text().split(" ")[4];
-			
-			log.get().info("삼성전자 주가------------------");
-			log.get().info("주가:"+juga);
-			log.get().info("등락률:"+DungRakrate);
-			log.get().info("시가:"+siga);
-			log.get().info("고가:"+goga);
-			log.get().info("저가:"+zeoga);
-			log.get().info("거래량:"+georaeryang);
-			log.get().info("타입:"+stype);
-			log.get().info("전일대비:"+vsyesterday);
-			log.get().info("가져오는 시간:"+str[0]+str[1]);
-			
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		while(true) {
+			try {
+				URL += ("&p=" + pageNum);
+				doc = Jsoup.connect(URL).get();
+				Elements elems = doc.select(".box__item-container");
+				if(elems.size() == 0) break;
+				for(Element elem : elems) {
+					log.get().info(elem.html());
+				}
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		return null;
