@@ -143,7 +143,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         	long scrollHeight = (long) js.executeScript("return document.body.scrollHeight");
         	
         	while (true) {
-        		currentHeight += 50;
+        		currentHeight += 100;
     		   js.executeScript("window.scrollTo(0, " + currentHeight + ")");
     		   try {
     		      Thread.sleep(100);
@@ -151,7 +151,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     		      e.printStackTrace();
     		      break;
     		   }
-    		   if(currentHeight + 50 > scrollHeight) {
+    		   if(currentHeight + 100 > scrollHeight) {
     			   js.executeScript("window.scrollTo(0, " + scrollHeight + ")");
         		   currentHeight = scrollHeight;
         		   try {
@@ -213,6 +213,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             		List<WebElement> title = best.findElements(By.cssSelector(batchSchedule.get().getTitleSelector1()));
                     if(title.size() == 0 && batchSchedule.get().getTitleSelector2() != null &&!batchSchedule.get().getTitleSelector2().equals("")) title = best.findElements(By.cssSelector(batchSchedule.get().getTitleSelector2()));
                     if(title.size() == 0 && batchSchedule.get().getTitleSelector3() != null &&!batchSchedule.get().getTitleSelector3().equals("")) title = best.findElements(By.cssSelector(batchSchedule.get().getTitleSelector3()));
+                    if(title.size() < 1) { throw new MyException("title is null"); }
                     String[] titles = title.get(0).getText().split("\n");
                     String name = removeSpecialCharacters(titles[batchSchedule.get().getTitleLocation()]);
                     goods.setName(name);
@@ -220,13 +221,14 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     List<WebElement> price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector1()));
                     if(price.size() == 0 && batchSchedule.get().getPriceSelector2() != null &&!batchSchedule.get().getPriceSelector2().equals("")) price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector2()));
                     if(price.size() == 0 && batchSchedule.get().getPriceSelector3() != null &&!batchSchedule.get().getPriceSelector3().equals("")) price = best.findElements(By.cssSelector(batchSchedule.get().getPriceSelector3()));
-                    if(price.size() == 0) { throw new MyException("Price is null"); }
+                    if(price.size() < 1) { throw new MyException("price is null"); }
                     String[] prices = price.get(0).getText().split("\n");
                     goods.setPrice(Integer.parseInt(prices[batchSchedule.get().getPriceLocation()].replaceAll("[^0-9]", "")));
                     
                     List<WebElement> deliveryFee = best.findElements(By.cssSelector(batchSchedule.get().getDeliveryFeeSelector1()));
                     if(deliveryFee.size() == 0 && batchSchedule.get().getDeliveryFeeSelector2() != null &&!batchSchedule.get().getDeliveryFeeSelector2().equals("")) deliveryFee = best.findElements(By.cssSelector(batchSchedule.get().getDeliveryFeeSelector2()));
                     if(deliveryFee.size() == 0 && batchSchedule.get().getDeliveryFeeSelector3() != null &&!batchSchedule.get().getDeliveryFeeSelector3().equals("")) deliveryFee = best.findElements(By.cssSelector(batchSchedule.get().getDeliveryFeeSelector3()));
+                    if(deliveryFee.size() < 1) { throw new MyException("deliveryFees is null"); }
                     String[] deliveryFees = deliveryFee.get(0).getText().split("\n");
                     if(batchSchedule.get().getBatchName().equals("네이버쇼핑")) {
                     	if(deliveryFees.length > batchSchedule.get().getDeliveryFeeLocation()) {
@@ -243,6 +245,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     List<WebElement> seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector1()));
                     if(seller.size() == 0 && batchSchedule.get().getSellerSelector2() != null &&!batchSchedule.get().getSellerSelector2().equals("")) seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector2()));
                     if(seller.size() == 0 && batchSchedule.get().getSellerSelector3() != null &&!batchSchedule.get().getSellerSelector3().equals("")) seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector3()));
+                    if(seller.size() < 1) { throw new MyException("seller is null"); }
                     String[] sellers = seller.get(0).getText().split("\n");
                     if(batchSchedule.get().getBatchName().equals("네이버쇼핑")) {
                     	String confirmSeller = sellers[batchSchedule.get().getSellerLocation()] == null || sellers[batchSchedule.get().getSellerLocation()].equals("") || sellers[batchSchedule.get().getSellerLocation()].equals("쇼핑몰별 최저가")? batchSchedule.get().getBatchName() : sellers[batchSchedule.get().getSellerLocation()];
@@ -256,6 +259,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     List<WebElement> urls = best.findElements(By.cssSelector(batchSchedule.get().getUrlSelector1()));
                     if(urls.size() == 0 && batchSchedule.get().getUrlSelector2() != null &&!batchSchedule.get().getUrlSelector2().equals("")) urls = best.findElements(By.cssSelector(batchSchedule.get().getUrlSelector2()));
                     if(urls.size() == 0 && batchSchedule.get().getUrlSelector3() != null &&!batchSchedule.get().getUrlSelector3().equals("")) urls = best.findElements(By.cssSelector(batchSchedule.get().getUrlSelector3()));
+                    if(urls.size() < 1) { throw new MyException("urls is null"); }
                     String url = urls.get(0).getAttribute("href");
                     goods.setDetail(url);
                     
