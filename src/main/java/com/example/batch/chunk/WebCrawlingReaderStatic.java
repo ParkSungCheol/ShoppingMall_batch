@@ -44,13 +44,24 @@ public class WebCrawlingReaderStatic implements ItemReader<List<Goods>>, StepExe
 			try {
 				URL += ("&p=" + pageNum);
 				doc = Jsoup.connect(URL).get();
-				Elements elems = doc.select(".box__item-container");
+				Elements elems = doc.select(batchSchedule.get().getTotalSelector());
 				if(elems.size() == 0) break;
 				for(Element elem : elems) {
-//					log.get().info(elem.html());
+					String title = elem.select(batchSchedule.get().getTitleSelector1()).get(batchSchedule.get().getTitleLocation()).text();
+					log.get().info("title : " + title);
+					String price = elem.select(batchSchedule.get().getPriceSelector1()).get(batchSchedule.get().getPriceLocation()).text();
+					log.get().info("price : " + price);
+					String deliveryFee = elem.select(batchSchedule.get().getDeliveryFeeSelector1()).get(batchSchedule.get().getDeliveryFeeLocation()).text();
+					log.get().info("deliveryFee : " + deliveryFee);
+					String seller = elem.select(batchSchedule.get().getSellerSelector1()).get(batchSchedule.get().getSellerLocation()).text();
+					log.get().info("seller : " + seller);
+					String url = elem.select(batchSchedule.get().getUrlSelector1()).get(0).text();
+					log.get().info("url : " + url);
+					String image = elem.select(batchSchedule.get().getImageSelector()).get(0).text();
+					log.get().info("image : " + image);
 				}
-				log.get().info("pageNum : " + pageNum + " count : " + elems.size());
 				pageNum++;
+				if(pageNum > 50) break;
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
