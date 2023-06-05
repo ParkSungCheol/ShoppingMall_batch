@@ -98,6 +98,8 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	if(jobCount == 0) {
     		webDriverManager.quitAllDrivers();
+    		log.info("#### driver END ####");
+    		
     		List<Connection> connections = dataSource.getAllConnections();
     		for(Connection connection : connections) {
     			try {

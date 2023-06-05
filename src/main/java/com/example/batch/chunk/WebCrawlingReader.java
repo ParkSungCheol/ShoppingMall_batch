@@ -1,7 +1,5 @@
 package com.example.batch.chunk;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,8 +9,6 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.firefox.FirefoxDriver;
-import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
@@ -74,7 +70,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 if (nextButton == null) {
                     
                     log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
-                    log.get().info("#### driver END ####");
                     
                     return null;
                 }
@@ -148,7 +143,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         	long scrollHeight = (long) js.executeScript("return document.body.scrollHeight");
         	
         	while (true) {
-        		currentHeight += 10;
+        		currentHeight += 50;
     		   js.executeScript("window.scrollTo(0, " + currentHeight + ")");
     		   try {
     		      Thread.sleep(100);
@@ -156,7 +151,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     		      e.printStackTrace();
     		      break;
     		   }
-    		   if(currentHeight + 10 > scrollHeight) {
+    		   if(currentHeight + 50 > scrollHeight) {
     			   js.executeScript("window.scrollTo(0, " + scrollHeight + ")");
         		   currentHeight = scrollHeight;
         		   try {
@@ -189,7 +184,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 //    	webDriverManager.getDriver(driver_num.get()).manage().timeouts().implicitlyWait(100, TimeUnit.MILLISECONDS);
         
         // 6. 조회, 로드될 때까지 최대 5초 대기
-    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(100));
+    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
 //        WebDriverWait wait = new WebDriverWait(webDriverManager.getDriver(driver_num.get()), Duration.ofSeconds(10));
         
         infiniteScroll(log);

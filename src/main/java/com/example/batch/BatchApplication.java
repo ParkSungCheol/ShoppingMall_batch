@@ -55,7 +55,7 @@ public class BatchApplication implements CommandLineRunner {
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
     	return LoggerFactory.getLogger(this.getClass());
     });
-	private static final int MAX_THREADS = 2;
+	private static final int MAX_THREADS = 1;
 	private static ConfigurableApplicationContext context;
 	private static int driver_num = -1;
 	private static String account;

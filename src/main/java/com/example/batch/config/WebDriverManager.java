@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class WebDriverManager{
     private static List<WebDriver> webDrivers;
-    private static final int MAX_THREADS = 2;
+    private static final int MAX_THREADS = 1;
     
     public WebDriverManager() {
 		// TODO Auto-generated constructor stub
