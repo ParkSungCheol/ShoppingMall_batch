@@ -51,7 +51,7 @@ public class WebCrawlingReaderStatic implements ItemReader<List<Goods>>, StepExe
 					log.get().info("title : " + title);
 					String price = elem.select(batchSchedule.get().getPriceSelector1()).get(batchSchedule.get().getPriceLocation()).text();
 					log.get().info("price : " + price);
-					String deliveryFee = elem.select(batchSchedule.get().getDeliveryFeeSelector1()).get(batchSchedule.get().getDeliveryFeeLocation()).text();
+					String deliveryFee = elem.select(batchSchedule.get().getDeliveryFeeSelector1()).size() < 1 ? "0" : elem.select(batchSchedule.get().getDeliveryFeeSelector1()).get(batchSchedule.get().getDeliveryFeeLocation()).text();
 					log.get().info("deliveryFee : " + deliveryFee);
 					String seller = elem.select(batchSchedule.get().getSellerSelector1()).get(batchSchedule.get().getSellerLocation()).text();
 					log.get().info("seller : " + seller);
