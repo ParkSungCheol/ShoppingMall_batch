@@ -51,8 +51,18 @@ public class WebDriverManager{
 
     public void quitAllDrivers() {
         for (WebDriver driver : webDrivers) {
-        	if(driver != null && ((RemoteWebDriver) driver).getSessionId() != null)
-        		driver.quit();
+            if (driver instanceof RemoteWebDriver) {
+                RemoteWebDriver remoteDriver = (RemoteWebDriver) driver;
+                if (remoteDriver.getSessionId() != null) {
+                    remoteDriver.quit();
+                    try {
+                        Thread.sleep(2000); // 2초 대기
+                    } catch (InterruptedException e) {
+                        // 대기 중인 스레드가 인터럽트되었을 경우 예외 처리
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
         }
         webDrivers.clear();
     }
