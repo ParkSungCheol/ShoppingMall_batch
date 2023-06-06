@@ -51,13 +51,25 @@ public class WebCrawlingReaderStatic implements ItemReader<List<Goods>>, StepExe
 					log.get().info("title : " + title);
 					String price = elem.select(batchSchedule.get().getPriceSelector1()).get(batchSchedule.get().getPriceLocation()).text();
 					log.get().info("price : " + price);
-					String deliveryFee = elem.select(batchSchedule.get().getDeliveryFeeSelector1()).size() < 1 ? "0" : elem.select(batchSchedule.get().getDeliveryFeeSelector1()).get(batchSchedule.get().getDeliveryFeeLocation()).text();
+					String deliveryFee;
+					if(elem.select(batchSchedule.get().getDeliveryFeeSelector1()).size() > 0) {
+						deliveryFee = elem.select(batchSchedule.get().getDeliveryFeeSelector1()).get(batchSchedule.get().getDeliveryFeeLocation()).text();
+					}
+					else {
+						deliveryFee = elem.select(batchSchedule.get().getDeliveryFeeSelector2()).get(batchSchedule.get().getDeliveryFeeLocation()).attr("alt");
+					}
 					log.get().info("deliveryFee : " + deliveryFee);
-					String seller = elem.select(batchSchedule.get().getSellerSelector1()).get(batchSchedule.get().getSellerLocation()).text();
+					String seller;
+					if(elem.select(batchSchedule.get().getSellerSelector1()).size() > 0) {
+						seller = elem.select(batchSchedule.get().getSellerSelector1()).get(batchSchedule.get().getSellerLocation()).text();
+					}
+					else {
+						seller = elem.select(batchSchedule.get().getSellerSelector2()).get(batchSchedule.get().getSellerLocation()).attr("alt");
+					}
 					log.get().info("seller : " + seller);
-					String url = elem.select(batchSchedule.get().getUrlSelector1()).get(0).text();
+					String url = elem.select(batchSchedule.get().getUrlSelector1()).get(0).attr("href");
 					log.get().info("url : " + url);
-					String image = elem.select(batchSchedule.get().getImageSelector()).get(0).text();
+					String image = elem.select(batchSchedule.get().getImageSelector()).get(0).attr("src");
 					log.get().info("image : " + image);
 				}
 				pageNum++;
