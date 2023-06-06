@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import com.example.batch.Domain.Goods;
 import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
-import com.example.batch.chunk.WebCrawlingReaderStatic;
+import com.example.batch.chunk.WebCrawlingReader;
 import com.example.batch.config.JobCompletionNotificationListener;
 
 /*
@@ -42,7 +42,7 @@ public class SimpleJobConfiguration {
 	@Autowired
 	JobRepository jobRepository;
 	@Autowired
-	WebCrawlingReaderStatic webCrawlingReader;
+	WebCrawlingReader webCrawlingReader;
 	@Autowired
 	DataProcessor dataProcessor;
 	@Autowired
