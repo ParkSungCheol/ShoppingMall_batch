@@ -64,8 +64,8 @@ public class WebCrawlingReaderStatic implements ItemReader<List<Goods>>, StepExe
 						seller = elem.select(batchSchedule.get().getSellerSelector1()).get(batchSchedule.get().getSellerLocation()).text();
 					}
 					else {
-						log.get().info("enter this");
-						seller = elem.select(batchSchedule.get().getSellerSelector2()).get(batchSchedule.get().getSellerLocation()).attr("alt");
+						seller = elem.select("div.box__information_seller > a").get(batchSchedule.get().getSellerLocation()).html();
+						log.get().info(seller);
 					}
 					log.get().info("seller : " + seller);
 					String url = elem.select(batchSchedule.get().getUrlSelector1()).get(0).attr("href");
