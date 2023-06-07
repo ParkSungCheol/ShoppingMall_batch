@@ -23,7 +23,7 @@ public class WebDriverManager{
     	
     	for(int i = 0; i < MAX_THREADS; i++) {
 	        // 1. WebDriver 경로 설정
-	    	Path path = Paths.get("driver//geckodriver"); 
+	    	Path path = Paths.get("driver//geckodriver");
 	        System.setProperty("webdriver.gecko.driver", path.toString());
 	        
 	        // 2. WebDriver 옵션 설정
