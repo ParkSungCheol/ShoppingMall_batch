@@ -11,6 +11,7 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.skip.NonSkippableReadException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.RetryCallback;
@@ -24,6 +25,7 @@ import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
 import com.example.batch.chunk.WebCrawlingReader;
 import com.example.batch.config.JobCompletionNotificationListener;
+import com.example.batch.exception.MyException;
 
 /*
 --job.name=incrementerJob
@@ -71,6 +73,8 @@ public class SimpleJobConfiguration {
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
                 .faultTolerant()
+                .skip(NonSkippableReadException.class)
+                .noRollback(NonSkippableReadException.class)
                 .retryLimit(3) // 재시도 횟수 설정
                 .retry(TimeoutException.class) // 재시도할 예외 타입 설정
                 .retryPolicy(customRetryPolicy()) // 커스텀 RetryPolicy 설정
@@ -79,7 +83,7 @@ public class SimpleJobConfiguration {
     }
     
     private RetryPolicy customRetryPolicy() {
-    	SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, Collections.singletonMap(TimeoutException.class, true));
+    	SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, Collections.singletonMap(MyException.class, true));
         return retryPolicy;
     }
 
