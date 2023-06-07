@@ -71,6 +71,7 @@ public class SimpleJobConfiguration {
                 .writer(myBatisItemWriter)
                 .faultTolerant()
                 .skip(TimeoutException.class) // TimeoutException을 스킵
+                .skipLimit(3) // 스킵 횟수 제한을 설정
                 .retryLimit(3)
                 .retry(TimeoutException.class)
                 .retryPolicy(customRetryPolicy()) // 커스텀 RetryPolicy 설정
