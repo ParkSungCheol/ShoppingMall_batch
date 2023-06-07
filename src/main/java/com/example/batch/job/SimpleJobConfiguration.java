@@ -1,7 +1,6 @@
 package com.example.batch.job;
 
 import java.util.List;
-
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -12,12 +11,12 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-
 import com.example.batch.Domain.Goods;
 import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
 import com.example.batch.chunk.WebCrawlingReader;
 import com.example.batch.config.JobCompletionNotificationListener;
+import com.example.batch.exception.MyException;
 
 /*
 --job.name=incrementerJob
@@ -64,6 +63,9 @@ public class SimpleJobConfiguration {
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
+                .faultTolerant()
+                .retryLimit(3) // 재시도 횟수 설정
+                .retry(MyException.class) // 재시도할 예외 타입 설정
                 .build();
     }
 }

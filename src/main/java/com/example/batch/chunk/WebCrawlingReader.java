@@ -4,9 +4,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -17,11 +18,13 @@ import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
+import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.stereotype.Component;
+
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
 import com.example.batch.config.WebDriverManager;
@@ -52,34 +55,38 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 		// TODO Auto-generated method stub
     	
-    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
-    		if(totalSize.get() == 0) {
-    			log.get().info("#### START ####");
-    			
-                // 3. WebDriver 객체 생성
-                driver.set(webDriverManager.getDriver(driver_num.get()));
-                
-    	        // 4. 웹페이지 요청
-                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
-    	        
-    	        return crawling(log.get());
-    		}
-    		else {
-    			pageNumber.set(pageNumber.get() + 1);
-                if (pageNumber.get() > 50) {
-                    
-                    log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
-                    
-                    return null;
-                }
-                
-                // 4. 웹페이지 요청
-                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
-    	        
-    	        return crawling(log.get());
-    		}
-    	}
-		return null;
+		try {
+	    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
+	    		if(totalSize.get() == 0) {
+	    			log.get().info("#### START ####");
+	    			
+	                // 3. WebDriver 객체 생성
+	                driver.set(webDriverManager.getDriver(driver_num.get()));
+	                
+	    	        // 4. 웹페이지 요청
+	                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
+	    	        
+	    	        return crawling(log.get());
+	    		}
+	    		else {
+	    			pageNumber.set(pageNumber.get() + 1);
+	                if (pageNumber.get() > 50) {
+	                    
+	                    log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
+	                    
+	                    return null;
+	                }
+	                
+	                // 4. 웹페이지 요청
+	                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
+	    	        
+	    	        return crawling(log.get());
+	    		}
+	    	}
+			return null;
+		} catch(TimeoutException e) {
+			throw new MyException(e, pageNumber.get());
+		}
 	}
 
 	@Override
@@ -115,7 +122,13 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	log.get().info("url : " + batchSchedule.get().getUrl());
     	totalSize.set(0);
 		totalSkippedSize.set(0);
-		pageNumber.set(1);
+		// 이전 실행에서 저장한 pageNum을 가져옴
+        ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
+        if (executionContext.containsKey("startPageNum")) {
+        	pageNumber.set((int) executionContext.get("startPageNum"));
+        } else {
+        	pageNumber.set(1); // 최초 실행 시 pageNum은 1로 초기화
+        }
 		jobExecution.set(stepExecution.getJobExecution());
 	}
 
@@ -127,6 +140,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         jobExecution.getExecutionContext().put("totalSkippedSize", totalSkippedSize.get());
         jobExecution.getExecutionContext().put("url", batchSchedule.get().getUrl());
         jobExecution.getExecutionContext().put("account", account);
+        // pageNum을 저장하여 다음 실행에 사용할 수 있도록 ExecutionContext에 저장
+        ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
+        executionContext.put("startPageNum", pageNumber.get());
 		return ExitStatus.COMPLETED;
 	}
 	
@@ -250,14 +266,21 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     
                     List<WebElement> seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector1()));
                     String confirmSeller = "";
-                    if(seller.size() != 0) {
+                    if(seller.size() > 0) {
                     	confirmSeller = seller.get(batchSchedule.get().getSellerLocation()).getText();
+                    	confirmSeller = removeSpecialCharacters(confirmSeller);
                     }
-                    else if(seller.size() == 0 && batchSchedule.get().getSellerSelector2() != null &&!batchSchedule.get().getSellerSelector2().equals("")) {
+                    else {
                     	seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector2()));
-                    	confirmSeller = seller.get(batchSchedule.get().getSellerLocation()).getAttribute("alt");
+                    	if(seller.size() > 0) {
+                    		seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector2()));
+                        	confirmSeller = seller.get(batchSchedule.get().getSellerLocation()).getAttribute("alt");
+                        	confirmSeller = removeSpecialCharacters(confirmSeller);
+                    	}
+                    	else {
+                    		confirmSeller = "지마켓";
+                    	}
                     }
-                    confirmSeller = removeSpecialCharacters(confirmSeller);
                     goods.setSellid(confirmSeller);
 //                    List<WebElement> seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector1()));
 //                    if(seller.size() == 0 && batchSchedule.get().getSellerSelector2() != null &&!batchSchedule.get().getSellerSelector2().equals("")) seller = best.findElements(By.cssSelector(batchSchedule.get().getSellerSelector2()));
