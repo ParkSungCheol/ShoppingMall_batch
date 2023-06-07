@@ -1,6 +1,8 @@
 package com.example.batch.job;
 
 import java.util.List;
+
+import org.openqa.selenium.TimeoutException;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -16,7 +18,6 @@ import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
 import com.example.batch.chunk.WebCrawlingReader;
 import com.example.batch.config.JobCompletionNotificationListener;
-import com.example.batch.exception.MyException;
 
 /*
 --job.name=incrementerJob
@@ -65,7 +66,7 @@ public class SimpleJobConfiguration {
                 .writer(myBatisItemWriter)
                 .faultTolerant()
                 .retryLimit(3) // 재시도 횟수 설정
-                .retry(MyException.class) // 재시도할 예외 타입 설정
+                .retry(TimeoutException.class) // 재시도할 예외 타입 설정
                 .build();
     }
 }
