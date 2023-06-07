@@ -2,6 +2,7 @@ package com.example.batch.job;
 
 import java.util.List;
 
+import org.openqa.selenium.TimeoutException;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -49,6 +50,8 @@ public class SimpleJobConfiguration {
 	DataProcessor dataProcessor;
 	@Autowired
 	MyBatisItemWriter myBatisItemWriter;
+	@Autowired
+	TimeoutDecider timeoutDecider;
 
     public Job myJob() {
         return this.jobBuilderFactory.get("myJob")
@@ -57,9 +60,9 @@ public class SimpleJobConfiguration {
                 .start(myStep())
                 // 기존 구현체
                 .incrementer(new RunIdIncrementer())
-                .next(timeoutDecider())
-                .from(timeoutDecider()).on("RESTART").to(myStep())
-                .from(timeoutDecider()).on("COMPLETED").end()
+                .next(timeoutDecider)
+                .from(timeoutDecider).on("RESTART").to(myStep())
+                .from(timeoutDecider).on("COMPLETED").end()
                 .end()
                 .build();
     }
@@ -71,10 +74,5 @@ public class SimpleJobConfiguration {
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
                 .build();
-    }
-    
-    @Bean
-    public TimeoutDecider timeoutDecider() {
-        return new TimeoutDecider();
     }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -39,6 +40,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<Integer> driver_num = new ThreadLocal<>();
+    private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
     private static String account;
     private static WebDriverManager webDriverManager;
     
@@ -50,39 +52,43 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	@Override
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 		// TODO Auto-generated method stub
-    	
-    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
-    		if(totalSize.get() == 0) {
-    			log.get().info("#### START ####");
-    			
-                // 3. WebDriver 객체 생성
-                driver.set(webDriverManager.getDriver(driver_num.get()));
-                
-    	        // 4. 웹페이지 요청
-                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
-    	        
-    	        return crawling(log.get());
-    		}
-    		else {
-    		  WebElement nextButton = findNextButton();
-              if (nextButton == null) {
-                  
-                  log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
-                  
-                  return null;
-              }
-              nextButton.click();
-              try {
-                  Thread.sleep(1000); // 1초 대기
-              } catch (InterruptedException e) {
-                  e.printStackTrace();
-                  return null;
-              }
-              pageNumber.set(pageNumber.get()+1);
-              return crawling(log.get());
-    		}
+    	try {
+	    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
+	    		if(totalSize.get() == 0) {
+	    			log.get().info("#### START ####");
+	    			
+	                // 3. WebDriver 객체 생성
+	                driver.set(webDriverManager.getDriver(driver_num.get()));
+	                
+	    	        // 4. 웹페이지 요청
+	                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
+	    	        
+	    	        return crawling(log.get());
+	    		}
+	    		else {
+	    		  WebElement nextButton = findNextButton();
+	              if (nextButton == null) {
+	                  
+	                  log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
+	                  
+	                  return null;
+	              }
+	              nextButton.click();
+	              try {
+	                  Thread.sleep(1000); // 1초 대기
+	              } catch (InterruptedException e) {
+	                  e.printStackTrace();
+	                  return null;
+	              }
+	              pageNumber.set(pageNumber.get()+1);
+	              return crawling(log.get());
+	    		}
+	    	}
+			return null;
+    	} catch(TimeoutException e) {
+    		stepEx.get().addFailureException(e);
+    		return null;
     	}
-		return null;
 	}
 
 	@Override
@@ -113,6 +119,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	batchSchedule.get().setUrlSelector3((String) stepExecution.getJobExecution().getJobParameters().getString("urlSelector3"));
     	batchSchedule.get().setNextButtonSelector((String) stepExecution.getJobExecution().getJobParameters().getString("nextButtonSelector"));
     	batchSchedule.get().setImageSelector((String) stepExecution.getJobExecution().getJobParameters().getString("imageSelector"));
+    	stepEx.set(stepExecution);
     	account = (String) stepExecution.getJobExecution().getJobParameters().getString("account");
     	driver_num.set(stepExecution.getJobExecution().getJobParameters().getLong("driver_num").intValue());
     	log.get().info("url : " + batchSchedule.get().getUrl());
