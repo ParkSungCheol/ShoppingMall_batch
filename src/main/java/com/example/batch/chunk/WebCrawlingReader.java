@@ -4,8 +4,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -22,9 +24,11 @@ import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.stereotype.Component;
+
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
 import com.example.batch.config.WebDriverManager;
+import com.example.batch.exception.MyException;
 
 @Component
 public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecutionListener {
@@ -51,34 +55,38 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 		// TODO Auto-generated method stub
     	
-    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
-    		if(totalSize.get() == 0) {
-    			log.get().info("#### START ####");
-    			
-                // 3. WebDriver 객체 생성
-                driver.set(webDriverManager.getDriver(driver_num.get()));
-                
-    	        // 4. 웹페이지 요청
-                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
-    	        
-    	        return crawling(log.get());
-    		}
-    		else {
-    			pageNumber.set(pageNumber.get() + 1);
-                if (pageNumber.get() > 50) {
-                    
-                    log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
-                    
-                    return null;
-                }
-                
-                // 4. 웹페이지 요청
-                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
-    	        
-    	        return crawling(log.get());
-    		}
-    	}
-		return null;
+		try {
+	    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
+	    		if(totalSize.get() == 0) {
+	    			log.get().info("#### START ####");
+	    			
+	                // 3. WebDriver 객체 생성
+	                driver.set(webDriverManager.getDriver(driver_num.get()));
+	                
+	    	        // 4. 웹페이지 요청
+	                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
+	    	        
+	    	        return crawling(log.get());
+	    		}
+	    		else {
+	    			pageNumber.set(pageNumber.get() + 1);
+	                if (pageNumber.get() > 50) {
+	                    
+	                    log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
+	                    
+	                    return null;
+	                }
+	                
+	                // 4. 웹페이지 요청
+	                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
+	    	        
+	    	        return crawling(log.get());
+	    		}
+	    	}
+			return null;
+		} catch(TimeoutException e) {
+			throw new MyException(e, pageNumber.get());
+		}
 	}
 
 	@Override
