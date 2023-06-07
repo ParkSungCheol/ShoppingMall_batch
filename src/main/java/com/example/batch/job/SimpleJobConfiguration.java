@@ -1,6 +1,5 @@
 package com.example.batch.job;
 
-import java.util.Collections;
 import java.util.List;
 import org.openqa.selenium.TimeoutException;
 import org.springframework.batch.core.Job;
@@ -11,7 +10,6 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.step.skip.NonSkippableReadException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.RetryCallback;
@@ -25,7 +23,6 @@ import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
 import com.example.batch.chunk.WebCrawlingReader;
 import com.example.batch.config.JobCompletionNotificationListener;
-import com.example.batch.exception.MyException;
 
 /*
 --job.name=incrementerJob
@@ -68,22 +65,21 @@ public class SimpleJobConfiguration {
 
     public Step myStep() {
         return stepBuilderFactory.get("myStep")
-        		.<List<Goods>, List<Goods>>chunk(1) // Chunk 사이즈 설정
+                .<List<Goods>, List<Goods>>chunk(1)
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
                 .faultTolerant()
-                .skip(NonSkippableReadException.class)
-                .noRollback(NonSkippableReadException.class)
-                .retryLimit(3) // 재시도 횟수 설정
-                .retry(TimeoutException.class) // 재시도할 예외 타입 설정
+                .skip(TimeoutException.class) // TimeoutException을 스킵
+                .retryLimit(3)
+                .retry(TimeoutException.class)
                 .retryPolicy(customRetryPolicy()) // 커스텀 RetryPolicy 설정
                 .listener(customRetryListener()) // 커스텀 RetryListener 설정
                 .build();
     }
-    
+
     private RetryPolicy customRetryPolicy() {
-    	SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, Collections.singletonMap(MyException.class, true));
+        SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3);
         return retryPolicy;
     }
 
