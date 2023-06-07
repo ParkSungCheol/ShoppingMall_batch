@@ -1,7 +1,7 @@
 package com.example.batch.job;
 
+import java.util.Collections;
 import java.util.List;
-
 import org.openqa.selenium.TimeoutException;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -13,6 +13,12 @@ import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.RetryListener;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.listener.RetryListenerSupport;
+import org.springframework.retry.policy.SimpleRetryPolicy;
 import com.example.batch.Domain.Goods;
 import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
@@ -67,6 +73,29 @@ public class SimpleJobConfiguration {
                 .faultTolerant()
                 .retryLimit(3) // 재시도 횟수 설정
                 .retry(TimeoutException.class) // 재시도할 예외 타입 설정
+                .retryPolicy(customRetryPolicy()) // 커스텀 RetryPolicy 설정
+                .listener(customRetryListener()) // 커스텀 RetryListener 설정
                 .build();
+    }
+    
+    private RetryPolicy customRetryPolicy() {
+    	SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy(3, Collections.singletonMap(TimeoutException.class, true));
+        return retryPolicy;
+    }
+
+    private RetryListener customRetryListener() {
+        return new RetryListenerSupport() {
+            @Override
+            public <T, E extends Throwable> boolean open(RetryContext context, RetryCallback<T, E> callback) {
+                // 재시도 전에 pageNum 등을 초기화하는 작업 수행 가능
+                return super.open(context, callback);
+            }
+            
+            @Override
+            public <T, E extends Throwable> void onError(RetryContext context, RetryCallback<T, E> callback, Throwable throwable) {
+                // 재시도 시도 후에 pageNum 등을 업데이트하는 작업 수행 가능
+                super.onError(context, callback, throwable);
+            }
+        };
     }
 }
