@@ -4,10 +4,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -24,11 +22,9 @@ import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.stereotype.Component;
-
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
 import com.example.batch.config.WebDriverManager;
-import com.example.batch.exception.MyException;
 
 @Component
 public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecutionListener {
@@ -68,18 +64,22 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	        return crawling(log.get());
     		}
     		else {
-    			pageNumber.set(pageNumber.get() + 1);
-                if (pageNumber.get() > 50) {
-                    
-                    log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
-                    
-                    return null;
-                }
-                
-                // 4. 웹페이지 요청
-                driver.get().get(batchSchedule.get().getUrl() + "&p=" + pageNumber.get());
-    	        
-    	        return crawling(log.get());
+    		  WebElement nextButton = findNextButton();
+              if (nextButton == null) {
+                  
+                  log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
+                  
+                  return null;
+              }
+              nextButton.click();
+              try {
+                  Thread.sleep(1000); // 1초 대기
+              } catch (InterruptedException e) {
+                  e.printStackTrace();
+                  return null;
+              }
+              pageNumber.set(pageNumber.get()+1);
+              return crawling(log.get());
     		}
     	}
 		return null;
@@ -183,6 +183,21 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             }
         }
     }
+	
+	private static WebElement findNextButton() {
+	      // TODO: 다음 버튼을 찾아서 반환하는 코드 작성
+	  	String byFunKey = "CSSSELECTOR";
+	  	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
+	//  	WebDriverWait wait = new WebDriverWait(webDriverManager.getDriver(driver_num.get()), Duration.ofSeconds(10));
+	  	String selectString = batchSchedule.get().getNextButtonSelector();
+	  	try {
+		  	WebElement target = wait.until(ExpectedConditions.presenceOfElementLocated( 
+		              byFunKey.equals("XPATH") ? By.xpath(selectString) : By.cssSelector(selectString) ));
+		  	return target;
+	  	} catch (Exception e) {
+	  		return null;
+	  	}
+	}
     
     private static List<Goods> crawling(Logger log) {
     	log.info("Current PageNumber : " + pageNumber.get());
@@ -191,7 +206,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 //    	webDriverManager.getDriver(driver_num.get()).manage().timeouts().implicitlyWait(100, TimeUnit.MILLISECONDS);
         
         // 6. 조회, 로드될 때까지 최대 5초 대기
-    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(30));
+    	WebDriverWait wait = new WebDriverWait(driver.get(), Duration.ofSeconds(10));
 //        WebDriverWait wait = new WebDriverWait(webDriverManager.getDriver(driver_num.get()), Duration.ofSeconds(10));
         
     	infiniteScroll(log);
