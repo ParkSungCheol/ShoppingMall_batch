@@ -17,6 +17,7 @@ import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
 import com.example.batch.chunk.WebCrawlingReader;
 import com.example.batch.config.JobCompletionNotificationListener;
+import com.example.batch.config.TimeoutDecider;
 
 /*
 --job.name=incrementerJob
@@ -46,8 +47,8 @@ public class SimpleJobConfiguration {
 	DataProcessor dataProcessor;
 	@Autowired
 	MyBatisItemWriter myBatisItemWriter;
-//	@Autowired
-//	TimeoutDecider timeoutDecider;
+	@Autowired
+	TimeoutDecider timeoutDecider;
 
     public Job myJob() {
         return this.jobBuilderFactory.get("myJob")
@@ -56,10 +57,10 @@ public class SimpleJobConfiguration {
                 .start(myStep())
                 // 기존 구현체
                 .incrementer(new RunIdIncrementer())
-//                .next(timeoutDecider)
-//                .from(timeoutDecider).on("RESTART").to(myStep())
-//                .from(timeoutDecider).on("COMPLETED").end()
-//                .end()
+                .next(timeoutDecider)
+                .from(timeoutDecider).on("RESTART").to(myStep())
+                .from(timeoutDecider).on("COMPLETED").end()
+                .end()
                 .build();
     }
 
