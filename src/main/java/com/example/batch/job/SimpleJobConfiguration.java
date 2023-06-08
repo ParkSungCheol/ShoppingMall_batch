@@ -62,9 +62,9 @@ public class SimpleJobConfiguration {
                 .from(timeoutDecider)
                     .on("RESTART").to(step)
                     .on("COMPLETED").end()
-                .from(step)
-                    .on("FAILED").to(timeoutDecider)
-                    .on("COMPLETED").end()
+//                .from(step)
+//                    .on("FAILED").to(timeoutDecider)
+//                    .on("COMPLETED").end()
                 .end()
                 .incrementer(new RunIdIncrementer())
                 .build();
