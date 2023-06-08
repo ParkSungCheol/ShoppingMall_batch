@@ -39,6 +39,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<Integer> driver_num = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> isFirst = new ThreadLocal<>();
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
     private static String account;
     private static WebDriverManager webDriverManager;
@@ -53,9 +54,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 		// TODO Auto-generated method stub
     	try {
 	    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
-	    		if(driver.get() == null) {
+	    		if(isFirst.get()) {
 	    			log.get().info("#### START ####");
-	    			
+	    			isFirst.set(false);
 	                // 3. WebDriver 객체 생성
 	                driver.set(webDriverManager.getDriver(driver_num.get()));
 	                
@@ -136,6 +137,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         	totalSize.set(0); // 최초 실행 시 totalSize은 0로 초기화
         }
 		jobExecution.set(stepExecution.getJobExecution());
+		isFirst.set(true);
 	}
 
 	@Override
