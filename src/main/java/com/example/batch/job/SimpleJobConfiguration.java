@@ -55,11 +55,8 @@ public class SimpleJobConfiguration {
     public Job myJob() {
         return this.jobBuilderFactory.get("myJob")
         		.listener(jobCompletionNotificationListener)
-        		/* step start */
-                .start(timeoutStep())
-                .on("RESTART").to(myStep())
-                .from(timeoutStep()).on("COMPLETED").end()
-                .end()
+                /* step start */
+                .start(myStep())
                 // 기존 구현체
                 .incrementer(new RunIdIncrementer())
                 .build();
@@ -71,6 +68,7 @@ public class SimpleJobConfiguration {
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
+                .listener(timeoutDecider) // TimeoutDecider를 Step의 리스너로 등록
                 .build();
     }
     

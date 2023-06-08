@@ -15,15 +15,13 @@ public class TimeoutDecider implements JobExecutionDecider {
     private Logger log = LoggerFactory.getLogger(this.getClass());
     
     @Override
-	public FlowExecutionStatus decide(JobExecution jobExecution, StepExecution stepExecution) {
-    	
-    	if (stepExecution.getFailureExceptions().stream().anyMatch(ex -> ex instanceof TimeoutException)) {
-        	log.info("timeoutOccurred entered");
-        	return new FlowExecutionStatus("RESTART");
-        }
-		else {
-			log.info("timeoutOccurred not entered");
+    public FlowExecutionStatus decide(JobExecution jobExecution, StepExecution stepExecution) {
+        if (stepExecution.getFailureExceptions().stream().anyMatch(ex -> ex instanceof TimeoutException)) {
+            log.info("timeoutOccurred entered");
+            return new FlowExecutionStatus("RESTART");
+        } else {
+            log.info("timeoutOccurred not entered");
             return new FlowExecutionStatus("COMPLETED");
         }
-	}
+    }
 }
