@@ -55,9 +55,10 @@ public class SimpleJobConfiguration {
     public Job myJob() {
         return this.jobBuilderFactory.get("myJob")
         		.listener(jobCompletionNotificationListener)
-                /* step start */
-        		.start(timeoutStep())
-                .on("COMPLETED").to(myStep())
+        		/* step start */
+                .start(timeoutStep())
+                .on("RESTART").to(myStep())
+                .from(timeoutStep()).on("COMPLETED").end()
                 .end()
                 // 기존 구현체
                 .incrementer(new RunIdIncrementer())
