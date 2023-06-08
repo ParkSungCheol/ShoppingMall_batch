@@ -73,6 +73,7 @@ public class SimpleJobConfiguration {
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
                 .listener(timeoutDecider) // timeoutDecider를 스텝의 리스너로 등록
+                .allowStartIfComplete(true)
                 .build();
     }
 }
