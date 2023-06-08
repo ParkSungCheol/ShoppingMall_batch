@@ -51,17 +51,18 @@ public class SimpleJobConfiguration {
 	TimeoutDecider timeoutDecider;
 
     public Job myJob() {
+    	Step step = myStep();
         return this.jobBuilderFactory.get("myJob")
         		.listener(jobCompletionNotificationListener)
                 /* step start */
                 // 기존 구현체
-        		.start(myStep())
+        		.start(step)
                 .on("FAILED").to(timeoutDecider)
                 .on("COMPLETED").end()
                 .from(timeoutDecider)
-                    .on("RESTART").to(myStep())
+                    .on("RESTART").to(step)
                     .on("COMPLETED").end()
-                .from(myStep())
+                .from(step)
                     .on("FAILED").to(timeoutDecider)
                     .on("COMPLETED").end()
                 .end()
