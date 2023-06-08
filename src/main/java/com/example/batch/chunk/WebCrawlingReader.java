@@ -34,7 +34,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	return LoggerFactory.getLogger(this.getClass());
     });
     private static final ThreadLocal<Integer> totalSize = new ThreadLocal<>();
-    private static final ThreadLocal<Integer> totalSkippedSize = new ThreadLocal<>();
     private static final ThreadLocal<BatchSchedule> batchSchedule = new ThreadLocal<>();
     private static final ThreadLocal<WebDriver> driver = new ThreadLocal<>();
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
@@ -54,7 +53,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 		// TODO Auto-generated method stub
     	try {
 	    	if(batchSchedule.get().getUrl() != null && !batchSchedule.get().getUrl().equals("")) {
-	    		if(totalSize.get() == 0) {
+	    		if(driver.get() == null) {
 	    			log.get().info("#### START ####");
 	    			
 	                // 3. WebDriver 객체 생성
@@ -69,7 +68,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	    		  WebElement nextButton = findNextButton();
 	              if (nextButton == null) {
 	                  
-	                  log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + (totalSize.get() - totalSkippedSize.get()) +", totalSkippedSize : " + totalSkippedSize.get());
+	                  log.get().info("totalSize : " + totalSize.get() + ", insertedSize : " + totalSize.get());
 	                  
 	                  return null;
 	              }
@@ -124,14 +123,17 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	account = (String) stepExecution.getJobExecution().getJobParameters().getString("account");
     	driver_num.set(stepExecution.getJobExecution().getJobParameters().getLong("driver_num").intValue());
     	log.get().info("url : " + batchSchedule.get().getUrl());
-    	totalSize.set(0);
-		totalSkippedSize.set(0);
 		// 이전 실행에서 저장한 pageNum을 가져옴
         ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
         if (executionContext.containsKey("startPageNum")) {
         	pageNumber.set((int) executionContext.get("startPageNum"));
         } else {
         	pageNumber.set(1); // 최초 실행 시 pageNum은 1로 초기화
+        }
+        if (executionContext.containsKey("totalSize")) {
+        	totalSize.set((int) executionContext.get("totalSize"));
+        } else {
+        	totalSize.set(0); // 최초 실행 시 totalSize은 0로 초기화
         }
 		jobExecution.set(stepExecution.getJobExecution());
 	}
@@ -141,12 +143,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 		// TODO Auto-generated method stub
 		JobExecution jobExecution = stepExecution.getJobExecution();
         jobExecution.getExecutionContext().put("totalSize", totalSize.get());
-        jobExecution.getExecutionContext().put("totalSkippedSize", totalSkippedSize.get());
         jobExecution.getExecutionContext().put("url", batchSchedule.get().getUrl());
         jobExecution.getExecutionContext().put("account", account);
         // pageNum을 저장하여 다음 실행에 사용할 수 있도록 ExecutionContext에 저장
         ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
         executionContext.put("startPageNum", pageNumber.get());
+        executionContext.put("totalSize", totalSize.get());
 		return ExitStatus.COMPLETED;
 	}
 	
@@ -232,8 +234,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         // 7. 콘텐츠 조회
         List<WebElement> bestContests = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(byFunKey.equals("XPATH") ? By.xpath(selectString) : By.cssSelector(selectString)));
         log.info( "등록된 상품 수 : " + bestContests.size() );
-        totalSize.set(totalSize.get() + bestContests.size());
-        int skippedCount = 0;
         if (bestContests.size() > 0) {
             for (WebElement best : bestContests) {
             	try {
@@ -351,17 +351,14 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 //            		continue;
 //            	}
             	catch(Exception e) {
-            		goodsList.remove(goodsList.size() - 1);
             		e.printStackTrace();
-            		skippedCount++;
-            		totalSkippedSize.set(totalSkippedSize.get() + 1);
             		throw e;
             	}
             }
         }
         
-        log.info("target : " + bestContests.size() + ", inserted : " + (bestContests.size() - skippedCount) + ", error : " + skippedCount);
-        
+        log.info("target : " + bestContests.size() + ", inserted : " + bestContests.size());
+        totalSize.set(totalSize.get() + bestContests.size());
         log.info("#### crawling END ####");
         return goodsList;
     }
