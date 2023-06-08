@@ -72,6 +72,7 @@ public class SimpleJobConfiguration {
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
+                .listener(timeoutDecider) // timeoutDecider를 스텝의 리스너로 등록
                 .build();
     }
 }
