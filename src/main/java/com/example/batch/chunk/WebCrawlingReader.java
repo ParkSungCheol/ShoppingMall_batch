@@ -265,11 +265,17 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     }
                     else if(deliveryFee.size() == 0 && batchSchedule.get().getDeliveryFeeSelector2() != null &&!batchSchedule.get().getDeliveryFeeSelector2().equals("")) {
                     	deliveryFee = best.findElements(By.cssSelector(batchSchedule.get().getDeliveryFeeSelector2()));
-                    	deliveryFeeString = deliveryFee.get(batchSchedule.get().getDeliveryFeeLocation()).getAttribute("alt");
+                    	deliveryFeeString = deliveryFee.size() > 0? deliveryFee.get(batchSchedule.get().getDeliveryFeeLocation()).getAttribute("alt") : null;
                     }
-                    deliveryFeeString = deliveryFeeString.replaceAll("[^0-9]", "");
-            		if(deliveryFeeString.equals("")) deliveryFeeString = "0";
-            		goods.setDeliveryfee(Integer.parseInt(deliveryFeeString));
+                    if(deliveryFeeString != null) {
+	                    deliveryFeeString = deliveryFeeString.replaceAll("[^0-9]", "");
+	            		if(deliveryFeeString.equals("")) deliveryFeeString = "0";
+	            		goods.setDeliveryfee(Integer.parseInt(deliveryFeeString));
+                    }
+                    else {
+                    	log.info("setDeliveryfee [ null ] : " + name);
+                    	goods.setDeliveryfee(null);
+                    }
 //                    if(deliveryFee.size() == 0 && batchSchedule.get().getDeliveryFeeSelector3() != null &&!batchSchedule.get().getDeliveryFeeSelector3().equals("")) deliveryFee = best.findElements(By.cssSelector(batchSchedule.get().getDeliveryFeeSelector3()));
 //                    String[] deliveryFees = deliveryFee.get(0).getText().split("\n");
 //                    if(batchSchedule.get().getBatchName().equals("네이버쇼핑")) {
