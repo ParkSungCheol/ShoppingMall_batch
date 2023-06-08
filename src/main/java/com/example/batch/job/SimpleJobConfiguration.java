@@ -58,9 +58,9 @@ public class SimpleJobConfiguration {
                 // 기존 구현체
                 .incrementer(new RunIdIncrementer())
                 .next(timeoutDecider)
-                .from(timeoutDecider).on("RESTART").to(myStep())
-                .from(timeoutDecider).on("COMPLETED").end()
-                .end()
+	                .on("RESTART").to(myStep())
+	                .on("COMPLETED").end()
+	            .end()
                 .build();
     }
 
