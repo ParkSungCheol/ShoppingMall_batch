@@ -57,8 +57,12 @@ public class SimpleJobConfiguration {
                 // 기존 구현체
         		.start(myStep())
                 .on("FAILED").to(timeoutDecider)
+                .on("COMPLETED").end()
                 .from(timeoutDecider)
                     .on("RESTART").to(myStep())
+                    .on("COMPLETED").end()
+                .from(myStep())
+                    .on("FAILED").to(timeoutDecider)
                     .on("COMPLETED").end()
                 .end()
                 .incrementer(new RunIdIncrementer())
