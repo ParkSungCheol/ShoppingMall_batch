@@ -60,6 +60,8 @@ public class SimpleJobConfiguration {
                 .from(timeoutDecider)
                 	.on("RESTART").to(myStep())
                 	.on("COMPLETED").end()
+            	.from(myStep())
+                .on("*").to(timeoutDecider)
 	            .end()
                 .build();
     }
