@@ -87,6 +87,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 			return null;
     	} catch(TimeoutException e) {
     		stepEx.get().addFailureException(e);
+    		stepEx.get().setExitStatus(ExitStatus.FAILED);
     		return null;
     	}
 	}
