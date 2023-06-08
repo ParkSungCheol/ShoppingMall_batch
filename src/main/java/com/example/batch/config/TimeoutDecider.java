@@ -13,11 +13,21 @@ import org.springframework.stereotype.Component;
 public class TimeoutDecider implements JobExecutionDecider {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
+    private static final ThreadLocal<Integer> retryCount = new ThreadLocal<>();
+    
+    public TimeoutDecider() {
+		// TODO Auto-generated constructor stub
+    	this.retryCount.set(3);
+	}
     
     @Override
     public FlowExecutionStatus decide(JobExecution jobExecution, StepExecution stepExecution) {
-        if (stepExecution.getFailureExceptions().stream().anyMatch(ex -> ex instanceof TimeoutException)) {
+    	if(this.retryCount.get() == 0) {
+    		return new FlowExecutionStatus("FAILED");
+    	}
+    	else if (stepExecution.getFailureExceptions().stream().anyMatch(ex -> ex instanceof TimeoutException)) {
             log.info("timeoutOccurred entered");
+            this.retryCount.set(this.retryCount.get() - 1);
             return new FlowExecutionStatus("RESTART");
         } else {
             log.info("timeoutOccurred not entered");
