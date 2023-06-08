@@ -56,12 +56,13 @@ public class SimpleJobConfiguration {
                 /* step start */
                 .start(myStep())
                 // 기존 구현체
-                .on("*").to(timeoutDecider)
-                .from(timeoutDecider)
-                	.on("RESTART").to(myStep())
-                	.on("COMPLETED").end()
-            	.from(myStep())
-                .on("*").to(timeoutDecider)
+                .incrementer(new RunIdIncrementer())
+                .next(timeoutDecider)
+	                .on("RESTART").to(myStep())
+	                .on("COMPLETED").end()
+	            .next(timeoutDecider)
+	                .on("RESTART").to(myStep())
+	                .on("COMPLETED").end()
 	            .end()
                 .build();
     }
@@ -72,8 +73,6 @@ public class SimpleJobConfiguration {
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
-                .listener(timeoutDecider) // timeoutDecider를 스텝의 리스너로 등록
-                .allowStartIfComplete(true)
                 .build();
     }
 }
