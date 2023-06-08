@@ -7,9 +7,11 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.job.flow.FlowExecutionStatus;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import com.example.batch.Domain.Goods;
@@ -54,13 +56,11 @@ public class SimpleJobConfiguration {
         return this.jobBuilderFactory.get("myJob")
         		.listener(jobCompletionNotificationListener)
                 /* step start */
-                .start(myStep())
+        		.start(timeoutStep())
+                .on("COMPLETED").to(myStep())
+                .end()
                 // 기존 구현체
                 .incrementer(new RunIdIncrementer())
-                .next(timeoutDecider)
-	                .on("RESTART").to(myStep())
-	                .on("COMPLETED").end()
-	            .end()
                 .build();
     }
 
@@ -70,6 +70,17 @@ public class SimpleJobConfiguration {
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)
                 .writer(myBatisItemWriter)
+                .build();
+    }
+    
+    public Step timeoutStep() {
+        return this.stepBuilderFactory.get("timeoutStep")
+                .tasklet((contribution, chunkContext) -> {
+                    // TimeoutDecider 호출
+                    FlowExecutionStatus status = timeoutDecider.decide(chunkContext.getStepContext().getStepExecution().getJobExecution(),
+                            chunkContext.getStepContext().getStepExecution());
+                    return status.equals(new FlowExecutionStatus("RESTART")) ? RepeatStatus.CONTINUABLE : RepeatStatus.FINISHED;
+                })
                 .build();
     }
 }
