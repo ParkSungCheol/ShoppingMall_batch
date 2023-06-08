@@ -28,9 +28,12 @@ public class TimeoutDecider implements JobExecutionDecider {
             log.info("timeoutOccurred entered");
             this.retryCount.set(this.retryCount.get() - 1);
             return new FlowExecutionStatus("RESTART");
-        } else {
-            log.info("timeoutOccurred not entered");
+        } else if (stepExecution.getFailureExceptions().isEmpty()) {
+            log.info("No failure exceptions. Job completed.");
             return new FlowExecutionStatus("COMPLETED");
+        } else {
+            log.info("Failure exceptions other than TimeoutException occurred. Rethrowing the exception.");
+            return new FlowExecutionStatus("FAILED");
         }
     }
 }
