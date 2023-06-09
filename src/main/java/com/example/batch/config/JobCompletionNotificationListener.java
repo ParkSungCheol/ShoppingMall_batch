@@ -29,13 +29,13 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private TaskExecutor taskExecutor;
     private static long jobCount = -1;
     private SlackService slackService;
-//    private WebDriverManager webDriverManager;
+    private WebDriverManager webDriverManager;
     
     public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
-//        this.webDriverManager = webDriverManager;
+        this.webDriverManager = webDriverManager;
     }
 
     @Override
@@ -60,6 +60,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	log.info("jobCount : {}", jobCount);
     	String url = (String) jobExecution.getExecutionContext().get("url");
     	String account = (String) jobExecution.getExecutionContext().get("account");
+    	int driver_num = (int) jobExecution.getExecutionContext().get("driver_num");
     	log.info("url : {}", url);
     	String msg = "[account] " + account + "\n[url] " + url + "\n[result] : ";
     	int flag = 0;
@@ -91,11 +92,14 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 			flag = 1;
 		}
 		slackService.call(flag, msg);
-        
+		
+		webDriverManager.quitDriver(driver_num);
+		log.info("#### driver END ####");
+		
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	if(jobCount == 0) {
-//    		webDriverManager.quitAllDrivers();
-//    		log.info("#### driver END ####");
+    		webDriverManager.quitAllDrivers();
+    		log.info("#### ALL driver END ####");
     		
     		List<Connection> connections = dataSource.getAllConnections();
     		for(Connection connection : connections) {

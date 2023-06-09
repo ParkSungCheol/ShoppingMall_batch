@@ -147,6 +147,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         jobExecution.getExecutionContext().put("totalSize", totalSize.get());
         jobExecution.getExecutionContext().put("url", batchSchedule.get().getUrl());
         jobExecution.getExecutionContext().put("account", account);
+        jobExecution.getExecutionContext().put("driver_num", driver_num.get());
         // pageNum을 저장하여 다음 실행에 사용할 수 있도록 ExecutionContext에 저장
         ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
         executionContext.put("startPageNum", pageNumber.get());
