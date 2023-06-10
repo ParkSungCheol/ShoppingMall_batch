@@ -31,7 +31,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private SlackService slackService;
     private WebDriverManager webDriverManager;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
