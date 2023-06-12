@@ -2,6 +2,7 @@ package com.example.batch.config;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +10,8 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -51,9 +54,21 @@ public class WebDriverManager{
     
     public void quitDriver(int driver_num) {
     	if(webDrivers.get(driver_num) != null && ((RemoteWebDriver) webDrivers.get(driver_num)).getSessionId() != null) {
-    		webDrivers.get(driver_num).close();
-    		webDrivers.get(driver_num).quit();
-
+    		try {
+    			webDrivers.get(driver_num).close(); // 현재 창 닫기
+                WebDriverWait wait = new WebDriverWait(webDrivers.get(driver_num), Duration.ofSeconds(10));
+                wait.until(ExpectedConditions.numberOfWindowsToBe(0)); // 모든 창이 닫힐 때까지 대기
+            } catch (Exception e) {
+                // 예외 처리
+                e.printStackTrace();
+            } finally {
+                try {
+                	webDrivers.get(driver_num).quit(); // 웹 드라이버 종료
+                } catch (Exception e) {
+                    // 예외 처리
+                    e.printStackTrace();
+                }
+            }
     	}
     }
 
@@ -62,17 +77,25 @@ public class WebDriverManager{
             if (driver instanceof RemoteWebDriver) {
                 RemoteWebDriver remoteDriver = (RemoteWebDriver) driver;
                 if (remoteDriver.getSessionId() != null) {
-                    remoteDriver.close();
-                    remoteDriver.quit();
                     try {
-                        Thread.sleep(2000); // 2초 대기
-                    } catch (InterruptedException e) {
-                        // 대기 중인 스레드가 인터럽트되었을 경우 예외 처리
-                        Thread.currentThread().interrupt();
+                        driver.close(); // 현재 창 닫기
+                        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                        wait.until(ExpectedConditions.numberOfWindowsToBe(0)); // 모든 창이 닫힐 때까지 대기
+                    } catch (Exception e) {
+                        // 예외 처리
+                        e.printStackTrace();
+                    } finally {
+                        try {
+                            remoteDriver.quit(); // 웹 드라이버 종료
+                        } catch (Exception e) {
+                            // 예외 처리
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
         }
         webDrivers.clear();
     }
+
 }
