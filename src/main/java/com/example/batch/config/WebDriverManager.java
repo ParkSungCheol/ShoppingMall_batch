@@ -50,8 +50,11 @@ public class WebDriverManager{
     }
     
     public void quitDriver(int driver_num) {
-    	if(webDrivers.get(driver_num) != null && ((RemoteWebDriver) webDrivers.get(driver_num)).getSessionId() != null)
+    	if(webDrivers.get(driver_num) != null && ((RemoteWebDriver) webDrivers.get(driver_num)).getSessionId() != null) {
+    		webDrivers.get(driver_num).close();
     		webDrivers.get(driver_num).quit();
+
+    	}
     }
 
     public void quitAllDrivers() {
@@ -59,6 +62,7 @@ public class WebDriverManager{
             if (driver instanceof RemoteWebDriver) {
                 RemoteWebDriver remoteDriver = (RemoteWebDriver) driver;
                 if (remoteDriver.getSessionId() != null) {
+                    remoteDriver.close();
                     remoteDriver.quit();
                     try {
                         Thread.sleep(2000); // 2초 대기
