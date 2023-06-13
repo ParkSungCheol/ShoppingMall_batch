@@ -93,8 +93,8 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 		}
 		slackService.call(flag, msg);
 		
-		webDriverManager.quitDriver(driver_num);
-		log.info("#### driver END ####");
+//		webDriverManager.quitDriver(driver_num);
+//		log.info("#### driver END ####");
 		
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	if(jobCount == 0) {

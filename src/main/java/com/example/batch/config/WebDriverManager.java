@@ -44,11 +44,27 @@ public class WebDriverManager{
     }
     
     public WebDriver getDriver(int driver_num) {
-    	if(webDrivers.get(driver_num) != null && ((RemoteWebDriver) webDrivers.get(driver_num)).getSessionId() != null)
-    		return webDrivers.get(driver_num);
+    	WebDriver driver = webDrivers.get(driver_num);
+    	if(driver != null && ((RemoteWebDriver) driver).getSessionId() != null) {
+    		// 현재 웹드라이버가 실행 중인 경우 초기화 작업 수행
+            try {
+            	driver.close(); // 현재 창 닫기
+                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                wait.until(ExpectedConditions.numberOfWindowsToBe(0)); // 모든 창이 닫힐 때까지 대기
+            } catch (Exception e) {
+                // 예외 처리
+                e.printStackTrace();
+            }
+            
+    		// 원하는 초기 상태 설정
+            driver.manage().deleteAllCookies();
+//    		webDrivers.get(driver_num).manage().window().maximize();
+    		return driver;
+    	}
     	else {
-    		webDrivers.put(driver_num, makeDriver());
-    		return webDrivers.get(driver_num);
+    		driver = makeDriver();
+    		webDrivers.put(driver_num, driver);
+    		return driver;
     	}
     }
     
