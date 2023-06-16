@@ -112,6 +112,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 		count++;
                 		synchronized (this) {
                 			log.get().info("currentThread : {}", Thread.currentThread().getName());
+                			Thread.currentThread().sleep(1000);
                 		    doc = Jsoup.connect(item.getLink()).get();
                 		}
                     	elems = doc.select("#wrap");
