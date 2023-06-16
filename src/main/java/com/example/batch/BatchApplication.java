@@ -106,7 +106,7 @@ public class BatchApplication implements CommandLineRunner {
         	}
 
             taskExecutor.execute(() -> {
-            	log.get().info("batchSchedules SIZE : " + subList.size());
+//            	log.get().info("batchSchedules SIZE : " + subList.size());
             	driver_num++;
             	for (BatchSchedule batchSchedule : subList) {
                 	log.get().info("batchSchedules : " + batchSchedule.getUrl());
