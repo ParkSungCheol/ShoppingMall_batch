@@ -107,10 +107,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 	
                 	String price = null;
                 	int count = 0;
+                	Elements elems;
                 	while(true) {
                 		count++;
                 		doc = Jsoup.connect(item.getLink()).get();
-                    	Elements elems = doc.select("#wrap");
+                    	elems = doc.select("#wrap");
     					
                     	if(elems.size() == 0) new Exception("elem size is 0");
     					for(Element elem : elems) {
