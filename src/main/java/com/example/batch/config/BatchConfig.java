@@ -27,8 +27,8 @@ public class BatchConfig implements BatchConfigurer {
     @Bean
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(1);
-        taskExecutor.setMaxPoolSize(1);
+        taskExecutor.setCorePoolSize(5);
+        taskExecutor.setMaxPoolSize(5);
         taskExecutor.setThreadNamePrefix("batch-thread-");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         taskExecutor.setAwaitTerminationSeconds(-1);

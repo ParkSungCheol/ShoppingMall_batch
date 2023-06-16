@@ -11,6 +11,8 @@ public class BatchSchedule {
 	@JsonProperty
     private String batchName;
 	@JsonProperty
+	private String target;
+	@JsonProperty
     private String url;
 	@JsonProperty
     private String totalSelector;
@@ -205,5 +207,11 @@ public class BatchSchedule {
 	}
 	public void setImageSelector(String imageSelector) {
 		this.imageSelector = imageSelector;
+	}
+	public String getTarget() {
+		return target;
+	}
+	public void setTarget(String target) {
+		this.target = target;
 	}
 }

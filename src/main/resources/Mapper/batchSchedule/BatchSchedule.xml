@@ -6,6 +6,7 @@
         SELECT 
 			SC.BATCH_NUM AS batch_num
 		,	SC.BATCH_NAME AS batch_name
+		,	SC.TARGET AS target
 		,	CONCAT(SI.URL,SC.TARGET) AS url
 		,	SI.TOTAL_SELECTOR AS total_selector
 		,	SI.TITLE_SELECTOR_1 AS title_selector_1
