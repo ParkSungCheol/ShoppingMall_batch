@@ -166,6 +166,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             
             log.get().info("target : " + total + ", inserted : " + total);
             totalSize.set(totalSize.get() + total);
+            pageNumber.set(pageNumber.get() + 1);
             log.get().info("#### crawling END ####");
             
             return goodsList;
