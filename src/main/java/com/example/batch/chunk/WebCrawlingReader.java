@@ -104,29 +104,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 	Goods goods = new Goods();
                 	goods.setName(removeSpecialCharacters(title));
                 	goods.setDetail(item.getLink());
-                	
-                	String price = null;
-                	int count = 0;
-                	Elements elems;
-                	while(true) {
-                		count++;
-                		synchronized (this) {
-                			log.get().info("currentTread : {}", Thread.currentThread().getName());
-                			Thread.currentThread().sleep(100);
-                		    doc = Jsoup.connect(item.getLink()).get();
-                		}
-                    	elems = doc.select("#wrap");
-    					
-                    	if(elems.size() == 0) new Exception("elem size is 0");
-    					for(Element elem : elems) {
-    					   price = elems.select("div > p").get(0).text().replaceAll("[^0-9]", "");
-    					}
-    					if(price != null) break;
-                	}
-                
 					goods.setImage(item.getImage());
-					log.get().info("item Link : {} // count : {}", item.getLink(), count);
-					goods.setPrice(Integer.parseInt(price));
+					goods.setPrice(Integer.parseInt(item.getLprice()));
 					
                     String titleUrl = "";
                     if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
@@ -141,7 +120,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     synchronized (this) {
             		    doc = Jsoup.connect(item.getLink()).get();
             		}
-                    elems = doc.select(batchSchedule.get().getTotalSelector());
+                    Elements elems = doc.select(batchSchedule.get().getTotalSelector());
 	                Integer deliveryFee = null;
 	                for(Element elem : elems) {
 	                   String mallName = elem.select(batchSchedule.get().getSellerSelector1()).get(0).text();
