@@ -82,7 +82,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 
             // API 응답 확인
             int responseCode = connection.getResponseCode();
-            Thread.sleep(1000);
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 // API 응답 데이터 읽기
                 BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
