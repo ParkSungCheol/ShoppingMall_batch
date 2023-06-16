@@ -104,17 +104,24 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 	Goods goods = new Goods();
                 	goods.setName(removeSpecialCharacters(title));
                 	goods.setDetail(item.getLink());
-                	doc = Jsoup.connect(item.getLink()).get();
-                	Elements elems = doc.select("#wrap");
+                	
                 	String price = null;
-					
-                	if(elems.size() == 0) new Exception("elem size is 0");
-					for(Element elem : elems) {
-					   price = elems.select("div > p").get(0).text().replaceAll("[^0-9]", "");
-					}
+                	int count = 0;
+                	while(true) {
+                		count++;
+                		doc = Jsoup.connect(item.getLink()).get();
+                    	Elements elems = doc.select("#wrap");
+    					
+                    	if(elems.size() == 0) new Exception("elem size is 0");
+    					for(Element elem : elems) {
+    					   price = elems.select("div > p").get(0).text().replaceAll("[^0-9]", "");
+    					}
+    					if(price != null) break;
+    					else Thread.sleep(1000);
+                	}
                 
 					goods.setImage(item.getImage());
-					log.get().info("item Link : {}", item.getLink());
+					log.get().info("item Link : {} // count : {}", item.getLink(), count);
 					goods.setPrice(Integer.parseInt(price));
 					
                     String titleUrl = "";
