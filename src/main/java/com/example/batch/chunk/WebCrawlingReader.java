@@ -118,6 +118,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                                    + "&query="
                                    + URLEncoder.encode("\"" + titleUrl + title + "\"", "UTF-8");
                     synchronized (this) {
+                    	Thread.currentThread().sleep(500);
             		    doc = Jsoup.connect(item.getLink()).get();
             		}
                     Elements elems = doc.select(batchSchedule.get().getTotalSelector());
