@@ -60,7 +60,6 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	log.info("jobCount : {}", jobCount);
     	String url = (String) jobExecution.getExecutionContext().get("url");
     	String account = (String) jobExecution.getExecutionContext().get("account");
-    	int driver_num = (int) jobExecution.getExecutionContext().get("driver_num");
     	log.info("url : {}", url);
     	String msg = "[account] " + account + "\n[url] " + url + "\n[result] : ";
     	int flag = 0;

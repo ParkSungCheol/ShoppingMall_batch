@@ -114,6 +114,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 					}
                 
 					goods.setImage(item.getImage());
+					log.get().info("item Link : {}", item.getLink());
 					goods.setPrice(Integer.parseInt(price));
 					
                     String titleUrl = "";
