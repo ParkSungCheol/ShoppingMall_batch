@@ -155,7 +155,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                
                 goods.setDeliveryfee(deliveryFee);
                 goods.setSellid(removeSpecialCharacters(item.getMallName()));
-                
+                goodsList.add(goods);
                 }
             } else {
                throw new Exception("API 요청에 실패했습니다. 응답 코드: " + responseCode);
