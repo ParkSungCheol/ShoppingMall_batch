@@ -110,7 +110,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 	Elements elems;
                 	while(true) {
                 		count++;
-                		doc = Jsoup.connect(item.getLink()).get();
+                		synchronized (this) {
+                		    doc = Jsoup.connect(item.getLink()).get();
+                		}
                     	elems = doc.select("#wrap");
     					
                     	if(elems.size() == 0) new Exception("elem size is 0");
@@ -135,7 +137,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                                    + item.getLprice()
                                    + "&query="
                                    + URLEncoder.encode("\"" + titleUrl + title + "\"", "UTF-8");
-                    doc = Jsoup.connect(deliveryUrl).get();
+                    synchronized (this) {
+            		    doc = Jsoup.connect(item.getLink()).get();
+            		}
                     elems = doc.select(batchSchedule.get().getTotalSelector());
 	                Integer deliveryFee = null;
 	                for(Element elem : elems) {
