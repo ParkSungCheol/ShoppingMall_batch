@@ -111,6 +111,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 	while(true) {
                 		count++;
                 		synchronized (this) {
+                			log.get().info("currentTread : {}", Thread.currentThread().getName());
                 			Thread.currentThread().sleep(100);
                 		    doc = Jsoup.connect(item.getLink()).get();
                 		}
@@ -121,7 +122,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     					   price = elems.select("div > p").get(0).text().replaceAll("[^0-9]", "");
     					}
     					if(price != null) break;
-    					else Thread.currentThread().sleep(100);
                 	}
                 
 					goods.setImage(item.getImage());
@@ -139,7 +139,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                                    + "&query="
                                    + URLEncoder.encode("\"" + titleUrl + title + "\"", "UTF-8");
                     synchronized (this) {
-                    	Thread.currentThread().sleep(100);
             		    doc = Jsoup.connect(item.getLink()).get();
             		}
                     elems = doc.select(batchSchedule.get().getTotalSelector());
