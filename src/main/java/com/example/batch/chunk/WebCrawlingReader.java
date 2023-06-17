@@ -117,15 +117,23 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                                    + item.getLprice()
                                    + "&query="
                                    + URLEncoder.encode("\"" + titleUrl + title + "\"", "UTF-8");
-                    synchronized (this) {
-                    	Thread.currentThread().sleep(100);
-            		    doc = Jsoup.connect(item.getLink()).get();
-            		}
-                    Elements elems = doc.select(batchSchedule.get().getTotalSelector());
+                    Elements elems;
+                    int count = 0;
+                    while(true) {
+                    	synchronized (this) {
+                        	Thread.currentThread().sleep(100);
+                		    doc = Jsoup.connect(deliveryUrl).get();
+                		}
+                    	elems = doc.select(batchSchedule.get().getTotalSelector());
+                    	if(elems.size() > 0) break;
+                    	count++;
+                    	if(count > 10) throw new Exception("deliveryFee select count over 10");
+                    }
 	                Integer deliveryFee = null;
 	                for(Element elem : elems) {
-	                   String mallName = elem.select(batchSchedule.get().getSellerSelector1()).get(0).text();
+	                	String mallName = elem.select(batchSchedule.get().getSellerSelector1()).get(0).text();
 	                   if(mallName.equals("쇼핑몰별 최저가")) mallName = "네이버";
+	                   if(mallName.equals("")) mallName = elem.select(batchSchedule.get().getSellerSelector2()).get(0).attr("alt");
 	                   if(item.getMallName().equals(mallName)) {
 	                      if(mallName.equals("네이버")) break;
 	                      Elements elemTarget = elem.select(batchSchedule.get().getDeliveryFeeSelector1());
@@ -147,8 +155,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                   }
 	                }
 	                
-                goods.setDeliveryfee(deliveryFee);
                 goods.setSellid(removeSpecialCharacters(item.getMallName()));
+                goods.setDeliveryfee(deliveryFee);
+                if((!goods.getSellid().equals("네이버") && deliveryFee == null) || (goods.getSellid().equals("네이버") && deliveryFee != null)) {
+                	log.get().info(goods.toString());
+                	throw new Exception("this is not normal");
+                }
                 goodsList.add(goods);
                 }
             } else {
@@ -163,6 +175,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             pageNumber.set(pageNumber.get() + 1);
             log.get().info("#### crawling END ####");
             
+            if(goodsList.size() == 0) return null;
             return goodsList;
         } catch (IOException e) {
             e.printStackTrace();
@@ -220,12 +233,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	@Override
 	public ExitStatus afterStep(StepExecution stepExecution) {
 		// TODO Auto-generated method stub
-		JobExecution jobExecution = stepExecution.getJobExecution();
-        jobExecution.getExecutionContext().put("totalSize", totalSize.get());
-        jobExecution.getExecutionContext().put("url", batchSchedule.get().getUrl());
-        jobExecution.getExecutionContext().put("account", account);
-        // pageNum을 저장하여 다음 실행에 사용할 수 있도록 ExecutionContext에 저장
-        ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
+		ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
+		executionContext.put("url", batchSchedule.get().getUrl());
+		executionContext.put("account", account);
         executionContext.put("startPageNum", pageNumber.get());
         executionContext.put("totalSize", totalSize.get());
 		return ExitStatus.COMPLETED;

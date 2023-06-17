@@ -109,6 +109,9 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
                     i.printStackTrace();
                 }
     		}
+    		
+    		slackService.call(1, "All Job Complete!!");
+    		
     		tte.shutdown();
     	}
     }

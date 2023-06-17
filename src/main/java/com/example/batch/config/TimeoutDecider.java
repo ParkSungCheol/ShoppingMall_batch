@@ -32,21 +32,26 @@ public class TimeoutDecider implements JobExecutionDecider {
         }
 
         int currentRetryCount = retryCounts.get(jobExecutionId);
+        String msg = "[account] " + jobExecution.getExecutionContext().get("account") + "\n";
+        msg += "[url] " + jobExecution.getExecutionContext().get("url") + "\n";
+        msg += "[startPageNum] " + jobExecution.getExecutionContext().get("startPageNum") + "\n";
+        retryCounts.put(jobExecutionId, currentRetryCount - 1);
+        msg += "[remainCount] " + retryCounts.get(jobExecutionId) + "번 남았습니다.\n";
 
         if (currentRetryCount == 0) {
             return new FlowExecutionStatus("FAILED");
         } else if (stepExecution.getFailureExceptions().stream().anyMatch(ex -> ex instanceof TimeoutException)) {
             log.info("timeoutOccurred entered");
-            retryCounts.put(jobExecutionId, currentRetryCount - 1);
-            slackService.call(0, retryCounts + "번 남았습니다.\n[ errorLog ] " + stepExecution.getFailureExceptions());
+            msg += "[errorLog] " + stepExecution.getFailureExceptions();
+            slackService.call(0, msg);
             return new FlowExecutionStatus("RESTART");
         } else if (stepExecution.getFailureExceptions().isEmpty()) {
             log.info("No failure exceptions. Job completed.");
             return new FlowExecutionStatus("COMPLETED");
         } else {
             log.info("Failure exceptions other than TimeoutException occurred. Retry this.");
-            retryCounts.put(jobExecutionId, currentRetryCount - 1);
-            slackService.call(0, retryCounts + "번 남았습니다.\n[ errorLog ] " + stepExecution.getFailureExceptions());
+            msg += "[errorLog] " + stepExecution.getFailureExceptions();
+            slackService.call(0, msg);
             return new FlowExecutionStatus("RESTART");
         }
     }

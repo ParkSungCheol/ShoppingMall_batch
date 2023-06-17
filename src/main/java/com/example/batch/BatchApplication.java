@@ -1,11 +1,6 @@
 package com.example.batch;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import org.elasticsearch.action.bulk.BulkRequest;
@@ -23,17 +18,12 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -41,12 +31,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.batch.Domain.BatchSchedule;
-import com.example.batch.Domain.NaverShoppingItem;
-import com.example.batch.Domain.NaverShoppingResult;
 import com.example.batch.Service.BatchScheduleService;
 import com.example.batch.Service.GoodsService;
 import com.example.batch.job.SimpleJobConfiguration;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootApplication
 public class BatchApplication implements CommandLineRunner {
