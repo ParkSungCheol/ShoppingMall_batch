@@ -8,6 +8,9 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -42,6 +45,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> Count = new ThreadLocal<>();
     private static String account;
     
 	@Value("${naver.api-url}")
@@ -100,40 +104,152 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 
                 // items 출력
                 for (NaverShoppingItem item : result.getItems()) {
-                	String title = item.getTitle().replaceAll("<b>", "").replaceAll("</b>", "");
+                	String title = item.getTitle().replaceAll("<b>", "").replaceAll("</b>", "").replaceAll("&amp;", "&");
                 	Goods goods = new Goods();
                 	goods.setName(removeSpecialCharacters(title));
                 	goods.setDetail(item.getLink());
 					goods.setImage(item.getImage());
-					goods.setPrice(Integer.parseInt(item.getLprice()));
+					item.setMallName(removeSpecialCharacters(item.getMallName().replaceAll("\\s+", " ")));
 					
-                    String titleUrl = "";
-                    if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
-                       titleUrl += item.getMallName() + " ";
-                    }
-                    String deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
-                                   + item.getLprice()
-                                   + "&minPrice="
-                                   + item.getLprice()
-                                   + "&query="
-                                   + URLEncoder.encode("\"" + titleUrl + title + "\"", "UTF-8");
-                    Elements elems;
-                    int count = 0;
+					Integer price = null;
+					Integer apiPrice = Integer.parseInt(item.getLprice());
+					Integer crawlPrice = null;
+					String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
+					Elements elems;
+					Count.set(0);
+					
+					while(true) {
+						synchronized (this) {
+							Thread.currentThread().sleep(500);
+							
+							doc = Jsoup.connect(item.getLink()).header("User-Agent", userAgent).get();
+							elems = doc.select("#wrap > div > p");
+							
+							if(elems.size() == 1) {
+								crawlPrice = Integer.parseInt(elems.get(0).text().replaceAll("[^0-9]", ""));
+								if(crawlPrice != null) break;
+							}
+						}
+						
+						Count.set(Count.get() + 1);
+                    	if(Count.get() > 10) {
+                    		log.get().info("url : {}", item.getLink());
+                    		throw new Exception("Price select count over 10");
+                    	}
+					}
+					
+                    Count.set(0);
+                    String deliveryUrl = "";
                     while(true) {
+                    	String titleUrl1 = "";
+                    	String titleUrl2 = "";
+                    	
                     	synchronized (this) {
-                        	Thread.currentThread().sleep(100);
-                		    doc = Jsoup.connect(deliveryUrl).get();
+                        	Thread.currentThread().sleep(500);
+                        	
+                        	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
+                        		titleUrl1 += " " + item.getMallName();
+//                        		if(item.getMallName().contains(" ")) titleUrl1 += " " + item.getMallName().replaceAll(" ", "");
+                                titleUrl2 += " \"" + item.getMallName() + "\"";
+//                                if(item.getMallName().contains(" ")) titleUrl2 += " \"" + item.getMallName().replaceAll(" ", "") + "\"";
+                             }
+                        	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
+                                    + apiPrice
+                                    + "&minPrice="
+                                    + apiPrice
+                                    + "&query="
+                                    + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") + titleUrl1 + " " + makeSpecialCharactersTokenizer(title, "\"") + titleUrl2
+                                    , "UTF-8");
+                        	
+                        	log.get().info("title : {}", title);
+                        	log.get().info("preUrl : {}", makeSpecialCharactersTokenizer(title, ""));
+                        	log.get().info("afterUrl : {}", makeSpecialCharactersTokenizer(title, "\""));
+                        	
+                		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
+                		    
+                		    elems = doc.select(batchSchedule.get().getTotalSelector());
+                        	if(elems.size() > 0) {
+                        		price = apiPrice;
+                        		break;
+                        	}
+                        	
+//                		    Thread.currentThread().sleep(500);
+//                        	
+//                        	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
+//                                titleUrl = " \"" + item.getMallName().replaceAll(" ", "") + "\"";
+//                             }
+//                        	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
+//                                    + apiPrice
+//                                    + "&minPrice="
+//                                    + apiPrice
+//                                    + "&query="
+//                                    + URLEncoder.encode("\"" + title.replace("&", "&amp;") + "\"" + titleUrl.replace("&", "&amp;"), "UTF-8");
+//                        	
+//                		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
+//                		    
+//                		    elems = doc.select(batchSchedule.get().getTotalSelector());
+//                		    if(elems.size() > 0) {
+//                        		price = apiPrice;
+//                        		break;
+//                        	}
+                		    
+                		    if(apiPrice != crawlPrice) {
+                		    	Thread.currentThread().sleep(500);
+                		    	
+//                		    	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
+//                                    titleUrl = " \"" + item.getMallName() + "\"";
+//                                 }
+                            	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
+                                        + crawlPrice
+                                        + "&minPrice="
+                                        + crawlPrice
+                                        + "&query="
+                                        + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") + titleUrl1 + " " + makeSpecialCharactersTokenizer(title, "\"") + titleUrl2
+                                        , "UTF-8");
+                            	
+                    		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
+                    		    
+                    		    elems = doc.select(batchSchedule.get().getTotalSelector());
+                    		    if(elems.size() > 0) {
+                            		price = crawlPrice;
+                            		break;
+                            	}
+                            	
+//                            	Thread.currentThread().sleep(500);
+//                            	
+//                            	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
+//                                    titleUrl = " \"" + item.getMallName().replaceAll(" ", "") + "\"";
+//                                 }
+//                            	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
+//                                        + crawlPrice
+//                                        + "&minPrice="
+//                                        + crawlPrice
+//                                        + "&query="
+//                                        + URLEncoder.encode("\"" + title.replace("&", "&amp;") + "\"" + titleUrl.replace("&", "&amp;"), "UTF-8");
+//                            	
+//                    		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
+//                    		    
+//                    		    elems = doc.select(batchSchedule.get().getTotalSelector());
+//                    		    if(elems.size() > 0) {
+//                            		price = crawlPrice;
+//                            		break;
+//                            	}
+                		    }
                 		}
-                    	elems = doc.select(batchSchedule.get().getTotalSelector());
-                    	if(elems.size() > 0) break;
-                    	count++;
-                    	if(count > 10) throw new Exception("deliveryFee select count over 10");
+                    	
+                    	Count.set(Count.get() + 1);
+                    	if(Count.get() > 10) {
+                    		log.get().info("url : {}", item.getLink());
+                    		log.get().info("deliveryUrl : {}", deliveryUrl);
+                    		throw new Exception("deliveryFee select count over 10");
+                    	}
                     }
 	                Integer deliveryFee = null;
 	                for(Element elem : elems) {
 	                	String mallName = elem.select(batchSchedule.get().getSellerSelector1()).get(0).text();
 	                   if(mallName.equals("쇼핑몰별 최저가")) mallName = "네이버";
 	                   if(mallName.equals("")) mallName = elem.select(batchSchedule.get().getSellerSelector2()).get(0).attr("alt");
+	                   mallName = removeSpecialCharacters(mallName);
 	                   if(item.getMallName().equals(mallName)) {
 	                      if(mallName.equals("네이버")) break;
 	                      Elements elemTarget = elem.select(batchSchedule.get().getDeliveryFeeSelector1());
@@ -155,8 +271,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                   }
 	                }
 	                
-                goods.setSellid(removeSpecialCharacters(item.getMallName()));
+                goods.setSellid(item.getMallName());
                 goods.setDeliveryfee(deliveryFee);
+                goods.setPrice(price);
                 if((!goods.getSellid().equals("네이버") && deliveryFee == null) || (goods.getSellid().equals("네이버") && deliveryFee != null)) {
                 	log.get().info(goods.toString());
                 	throw new Exception("this is not normal");
@@ -267,8 +384,32 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     
     public static String removeSpecialCharacters(String text) {
         // 정규 표현식을 사용하여 특수 문자 제거
-        String pattern = "[^a-zA-Z0-9가-힣\\s]";
+        String pattern = "[^.a-zA-Z0-9가-힣\\s]";
         text = text.replaceAll(pattern, "");
         return text;
+    }
+    
+    public String makeSpecialCharactersTokenizer(String input, String delimeter) {
+    	String regex = "[^\\p{L}\\p{Z}\\p{N}.]";
+
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+
+        String processedString = "";
+        int startIndex = 0;
+        while (matcher.find()) {
+            int endIndex = matcher.start();
+            String token = input.substring(startIndex, endIndex).trim();
+            if (!token.isEmpty()) {
+                processedString += delimeter + token + delimeter + " ";
+            }
+            startIndex = matcher.end();
+        }
+        String token = input.substring(startIndex).trim();
+        if (!token.isEmpty()) {
+            processedString += delimeter + token + delimeter;
+        }
+
+        return processedString;
     }
 }
