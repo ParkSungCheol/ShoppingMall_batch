@@ -8,6 +8,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -109,6 +110,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 	goods.setName(removeSpecialCharacters(title));
                 	goods.setDetail(item.getLink());
 					goods.setImage(item.getImage());
+					String mallNameTest = item.getMallName().replaceAll("\\s+", " ");
 					item.setMallName(removeSpecialCharacters(item.getMallName().replaceAll("\\s+", " ")));
 					
 					Integer price = null;
@@ -120,7 +122,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 					
 					while(true) {
 						synchronized (this) {
-							Thread.currentThread().sleep(500);
+							Thread.currentThread().sleep(150);
 							
 							doc = Jsoup.connect(item.getLink()).header("User-Agent", userAgent).get();
 							elems = doc.select("#wrap > div > p");
@@ -145,12 +147,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     	String titleUrl2 = "";
                     	
                     	synchronized (this) {
-                        	Thread.currentThread().sleep(500);
+                        	Thread.currentThread().sleep(150);
                         	
                         	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
-                        		titleUrl1 += " " + item.getMallName();
+                        		titleUrl1 += " " + mallNameTest;
 //                        		if(item.getMallName().contains(" ")) titleUrl1 += " " + item.getMallName().replaceAll(" ", "");
-                                titleUrl2 += " \"" + item.getMallName() + "\"";
+                                titleUrl2 += " \"" + mallNameTest + "\"";
 //                                if(item.getMallName().contains(" ")) titleUrl2 += " \"" + item.getMallName().replaceAll(" ", "") + "\"";
                              }
                         	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
@@ -158,12 +160,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                                     + "&minPrice="
                                     + apiPrice
                                     + "&query="
-                                    + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") + titleUrl1 + " " + makeSpecialCharactersTokenizer(title, "\"") + titleUrl2
+                                    + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") 
+                                    //+ titleUrl1 
+                                    //+ " " + makeSpecialCharactersTokenizer(title, "\"") 
+                                    + titleUrl2
                                     , "UTF-8");
-                        	
-                        	log.get().info("title : {}", title);
-                        	log.get().info("preUrl : {}", makeSpecialCharactersTokenizer(title, ""));
-                        	log.get().info("afterUrl : {}", makeSpecialCharactersTokenizer(title, "\""));
                         	
                 		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
                 		    
@@ -194,7 +195,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 //                        	}
                 		    
                 		    if(apiPrice != crawlPrice) {
-                		    	Thread.currentThread().sleep(500);
+                		    	Thread.currentThread().sleep(150);
                 		    	
 //                		    	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
 //                                    titleUrl = " \"" + item.getMallName() + "\"";
@@ -204,7 +205,10 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                                         + "&minPrice="
                                         + crawlPrice
                                         + "&query="
-                                        + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") + titleUrl1 + " " + makeSpecialCharactersTokenizer(title, "\"") + titleUrl2
+                                        + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") 
+                                        //+ titleUrl1 
+                                        //+ " " + makeSpecialCharactersTokenizer(title, "\"") 
+                                        + titleUrl2
                                         , "UTF-8");
                             	
                     		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
@@ -239,11 +243,17 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     	
                     	Count.set(Count.get() + 1);
                     	if(Count.get() > 10) {
+                    		log.get().info("title : {}", title);
+                        	log.get().info("preUrl : {}", makeSpecialCharactersTokenizer(title, ""));
+                        	log.get().info("afterUrl : {}", makeSpecialCharactersTokenizer(title, "\""));
                     		log.get().info("url : {}", item.getLink());
                     		log.get().info("deliveryUrl : {}", deliveryUrl);
                     		throw new Exception("deliveryFee select count over 10");
                     	}
                     }
+//                    log.get().info("title : {}", title);
+//                	log.get().info("preUrl : {}", makeSpecialCharactersTokenizer(title, ""));
+//                	log.get().info("afterUrl : {}", makeSpecialCharactersTokenizer(title, "\""));
 	                Integer deliveryFee = null;
 	                for(Element elem : elems) {
 	                	String mallName = elem.select(batchSchedule.get().getSellerSelector1()).get(0).text();
@@ -275,6 +285,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 goods.setDeliveryfee(deliveryFee);
                 goods.setPrice(price);
                 if((!goods.getSellid().equals("네이버") && deliveryFee == null) || (goods.getSellid().equals("네이버") && deliveryFee != null)) {
+                	log.get().info("title : {}", title);
+                	log.get().info("preUrl : {}", makeSpecialCharactersTokenizer(title, ""));
+                	log.get().info("afterUrl : {}", makeSpecialCharactersTokenizer(title, "\""));
+                	log.get().info("url : {}", item.getLink());
+            		log.get().info("deliveryUrl : {}", deliveryUrl);
                 	log.get().info(goods.toString());
                 	throw new Exception("this is not normal");
                 }
@@ -390,25 +405,37 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     }
     
     public String makeSpecialCharactersTokenizer(String input, String delimeter) {
-    	String regex = "[^\\p{L}\\p{Z}\\p{N}.]";
+    	String regex = "[^\\p{L}\\p{Z}\\p{N}.]+";
+    	StringTokenizer st = new StringTokenizer(input, " ");
+    	
+    	String processedString = "" + delimeter;
+    	while(st.hasMoreTokens()) {
+    		String target = st.nextToken();
+    		while(true) {
+	    		// 특정 토큰의 마지막 글자가 숫자인 경우
+	            if (Character.isDigit(target.charAt(target.length() - 1))) {
+	                if (st.hasMoreTokens()) {
+	                    String nextToken = st.nextToken();
+	                    if(Character.isDigit(nextToken.charAt(0))) nextToken = " " + nextToken;
+	                    target = target + nextToken; // 다음 토큰과 붙여서 문자열 생성
+	                }
+	            }
+	            else break;
+    		}
+	        Pattern pattern = Pattern.compile(regex);
+	        Matcher matcher = pattern.matcher(target);
+	
+	        if (matcher.find()) {
+	        	processedString = processedString.trim() + delimeter + " " + delimeter;
+	        	continue;
+	        }
+	        String token = target.trim();
+	        if (!token.isEmpty()) {
+	            processedString += token + " ";
+	        }
+    	}
 
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(input);
-
-        String processedString = "";
-        int startIndex = 0;
-        while (matcher.find()) {
-            int endIndex = matcher.start();
-            String token = input.substring(startIndex, endIndex).trim();
-            if (!token.isEmpty()) {
-                processedString += delimeter + token + delimeter + " ";
-            }
-            startIndex = matcher.end();
-        }
-        String token = input.substring(startIndex).trim();
-        if (!token.isEmpty()) {
-            processedString += delimeter + token + delimeter;
-        }
+        processedString = processedString.replaceAll("\\s+", " ").trim() + delimeter; // 중복 공백 제거
 
         return processedString;
     }
