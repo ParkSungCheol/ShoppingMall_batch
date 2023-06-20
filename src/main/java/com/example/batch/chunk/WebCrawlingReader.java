@@ -150,9 +150,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                         	Thread.currentThread().sleep(200);
                         	
                         	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
-                        		titleUrl1 += " " + mallNameTest;
+                        		titleUrl1 += " , " + item.getMallName();
 //                        		if(item.getMallName().contains(" ")) titleUrl1 += " " + item.getMallName().replaceAll(" ", "");
-                                titleUrl2 += " \"" + mallNameTest + "\"";
+                                titleUrl2 += " \"" + item.getMallName() + "\"";
 //                                if(item.getMallName().contains(" ")) titleUrl2 += " \"" + item.getMallName().replaceAll(" ", "") + "\"";
                              }
                         	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
@@ -161,7 +161,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                                     + apiPrice
                                     + "&query="
                                     + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") 
-                                    //+ titleUrl1 
+                                    + titleUrl1 
                                     //+ " " + makeSpecialCharactersTokenizer(title, "\"") 
                                     + titleUrl2
                                     , "UTF-8");
@@ -205,7 +205,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                                         + crawlPrice
                                         + "&query="
                                         + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") 
-                                        //+ titleUrl1 
+                                        + titleUrl1 
                                         //+ " " + makeSpecialCharactersTokenizer(title, "\"") 
                                         + titleUrl2
                                         , "UTF-8");
