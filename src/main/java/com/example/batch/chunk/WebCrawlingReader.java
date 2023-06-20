@@ -122,7 +122,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 					
 					while(true) {
 						synchronized (this) {
-							Thread.currentThread().sleep(150);
+							Thread.currentThread().sleep(200);
 							
 							doc = Jsoup.connect(item.getLink()).header("User-Agent", userAgent).get();
 							elems = doc.select("#wrap > div > p");
@@ -147,7 +147,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     	String titleUrl2 = "";
                     	
                     	synchronized (this) {
-                        	Thread.currentThread().sleep(150);
+                        	Thread.currentThread().sleep(200);
                         	
                         	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
                         		titleUrl1 += " " + mallNameTest;
@@ -193,9 +193,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 //                        		price = apiPrice;
 //                        		break;
 //                        	}
-                		    
                 		    if(apiPrice != crawlPrice) {
-                		    	Thread.currentThread().sleep(150);
+                		    	Thread.currentThread().sleep(200);
                 		    	
 //                		    	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
 //                                    titleUrl = " \"" + item.getMallName() + "\"";
@@ -406,6 +405,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     
     public String makeSpecialCharactersTokenizer(String input, String delimeter) {
     	String regex = "[^\\p{L}\\p{Z}\\p{N}.]+";
+    	String numberRegex = "^\\d+$";
+    	
     	StringTokenizer st = new StringTokenizer(input, " ");
     	
     	String processedString = "" + delimeter;
@@ -416,9 +417,10 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	            if (Character.isDigit(target.charAt(target.length() - 1))) {
 	                if (st.hasMoreTokens()) {
 	                    String nextToken = st.nextToken();
-	                    if(Character.isDigit(nextToken.charAt(0))) nextToken = " " + nextToken;
-	                    target = target + nextToken; // 다음 토큰과 붙여서 문자열 생성
+	                    if(Character.isDigit(nextToken.charAt(nextToken.length() - 1))) continue;
+	                    else target += " "; // 다음 토큰과 붙여서 문자열 생성
 	                }
+	                else break;
 	            }
 	            else break;
     		}
@@ -435,7 +437,23 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	        }
     	}
 
-        processedString = processedString.replaceAll("\\s+", " ").trim() + delimeter; // 중복 공백 제거
+        processedString = processedString.replaceAll("\\s+", " ").trim();
+        int lastSpaceIndex = processedString.lastIndexOf(" ");
+        
+        if (lastSpaceIndex != -1) {
+            // 띄어쓰기가 포함되어 있지 않은 경우 원본 문자열을 그대로 반환
+        	String pre = processedString.substring(0, lastSpaceIndex + 1);
+        	String last = processedString.substring(lastSpaceIndex + 1);
+        	Pattern pattern = Pattern.compile(numberRegex);
+	        Matcher matcher = pattern.matcher(last);
+	        
+	        if(matcher.find()) {
+	        	last = "";
+	        }
+	        processedString = pre + last;
+        }
+        
+        processedString += delimeter; // 중복 공백 제거
 
         return processedString;
     }
