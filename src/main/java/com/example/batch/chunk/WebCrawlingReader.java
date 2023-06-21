@@ -105,6 +105,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 
                 // items 출력
                 for (NaverShoppingItem item : result.getItems()) {
+                	Boolean isNotExist = false;
                 	String title = item.getTitle().replaceAll("<b>", "").replaceAll("</b>", "").replaceAll("&amp;", "&");
                 	Goods goods = new Goods();
                 	goods.setName(removeSpecialCharacters(title));
@@ -122,14 +123,21 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 					
 					while(true) {
 						synchronized (this) {
-							Thread.currentThread().sleep(200);
+							Thread.currentThread().sleep(250);
 							
 							doc = Jsoup.connect(item.getLink()).header("User-Agent", userAgent).get();
 							elems = doc.select("#wrap > div > p");
 							
 							if(elems.size() == 1) {
-								crawlPrice = Integer.parseInt(elems.get(0).text().replaceAll("[^0-9]", ""));
-								if(crawlPrice != null) break;
+								String crawlPriceString = elems.get(0).text().replaceAll("[^0-9]", "");
+								if(crawlPriceString.equals("")) {
+									isNotExist = true;
+									break;
+								}
+								else {
+									crawlPrice = Integer.parseInt(crawlPriceString);
+									if(crawlPrice != null) break;
+								}
 							}
 						}
 						
@@ -140,6 +148,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     	}
 					}
 					
+					if(isNotExist) {
+						total--;
+						continue;
+					}
+					
                     Count.set(0);
                     String deliveryUrl = "";
                     while(true) {
@@ -147,12 +160,13 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     	String titleUrl2 = "";
                     	
                     	synchronized (this) {
-                        	Thread.currentThread().sleep(200);
+                        	Thread.currentThread().sleep(250);
                         	
                         	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
-                        		titleUrl1 += " , " + item.getMallName();
+                        		String[] tokens = mallNameTest.split("[\\s+\\-|]");
+                        		titleUrl1 += " +" + tokens[0];
 //                        		if(item.getMallName().contains(" ")) titleUrl1 += " " + item.getMallName().replaceAll(" ", "");
-                                titleUrl2 += " \"" + item.getMallName() + "\"";
+                                titleUrl2 += " \"" + tokens[0] + "\"";
 //                                if(item.getMallName().contains(" ")) titleUrl2 += " \"" + item.getMallName().replaceAll(" ", "") + "\"";
                              }
                         	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
@@ -194,7 +208,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 //                        		break;
 //                        	}
                 		    if(apiPrice != crawlPrice) {
-                		    	Thread.currentThread().sleep(200);
+                		    	Thread.currentThread().sleep(250);
                 		    	
 //                		    	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
 //                                    titleUrl = " \"" + item.getMallName() + "\"";
@@ -432,7 +446,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	        	continue;
 	        }
 	        String token = target.trim();
-	        if (!token.isEmpty()) {
+	        if (!token.isEmpty() && target.length() > 1) {
 	            processedString += token + " ";
 	        }
     	}
