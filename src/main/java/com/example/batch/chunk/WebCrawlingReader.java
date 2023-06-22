@@ -78,6 +78,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             URL url = new URL(apiUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
+            
+//            log.get().info("apiUrl : {}", apiUrl);
 
             // API 응답 확인
             int responseCode = connection.getResponseCode();
@@ -122,8 +124,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     							
     							goods.setImage(product.getProductImage300());
     	                    	goods.setDetail(product.getDetailPageUrl());
-//    	                        log.get().info("image: " + product.getProductImage300());
-//    	                        log.get().info("detail: " + product.getDetailPageUrl());
+    	                        log.get().info("image: " + product.getProductImage300());
+    	                        log.get().info("detail: " + product.getDetailPageUrl());
     							
     							doc = Jsoup.connect(goods.getDetail()).header("User-Agent", userAgent).get();
     							elems = doc.select("#layBodyWrap h1.title");
@@ -131,7 +133,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     							if(elems.size() == 1) {
     								String title = elems.get(0).text();
     								if(!title.equals("")) {
-//    									log.get().info("title : {}", title);
+    									log.get().info("title : {}", title);
     									goods.setName(title);
     								}
     								else isOk = false;
@@ -143,7 +145,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     							if(elems.size() >= 1) {
     								String price = elems.get(0).text().replaceAll("[^0-9]", "");
     								if(!price.equals("")) {
-//    									log.get().info("price : {}", price);
+    									log.get().info("price : {}", price);
     									goods.setPrice(Integer.parseInt(price));
     								}
     								else isOk = false;
@@ -168,7 +170,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     									}
     								}
     								if(deliveryFee != null) {
-//    									log.get().info("deliveryFee : {}", deliveryFee);
+    									log.get().info("deliveryFee : {}", deliveryFee);
     									goods.setDeliveryfee(deliveryFee);
     								}
     								else isOk = false;
@@ -181,7 +183,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     								String seller = elems.get(0).text();
     								if(!seller.equals("")) {
     									goods.setSellid(seller);
-//    									log.get().info("seller : {}", seller);
+    									log.get().info("seller : {}", seller);
     								}
     								else isOk = false;
     							}
