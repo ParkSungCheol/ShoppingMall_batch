@@ -123,7 +123,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 					
 					while(true) {
 						synchronized (this) {
-							Thread.currentThread().sleep(250);
+							Thread.currentThread().sleep(500);
 							
 							doc = Jsoup.connect(item.getLink()).header("User-Agent", userAgent).get();
 							elems = doc.select("#wrap > div > p");
@@ -160,13 +160,13 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     	String titleUrl2 = "";
                     	
                     	synchronized (this) {
-                        	Thread.currentThread().sleep(250);
+                        	Thread.currentThread().sleep(500);
                         	
                         	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
                         		String[] tokens = mallNameTest.split("[\\s+\\-|]");
-                        		titleUrl1 += " +" + tokens[0];
+                        		titleUrl1 += " " + tokens[0];
 //                        		if(item.getMallName().contains(" ")) titleUrl1 += " " + item.getMallName().replaceAll(" ", "");
-                                titleUrl2 += " \"" + tokens[0] + "\"";
+//                                titleUrl2 += " \"" + tokens[0] + "\"";
 //                                if(item.getMallName().contains(" ")) titleUrl2 += " \"" + item.getMallName().replaceAll(" ", "") + "\"";
                              }
                         	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
@@ -208,7 +208,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 //                        		break;
 //                        	}
                 		    if(apiPrice != crawlPrice) {
-                		    	Thread.currentThread().sleep(250);
+                		    	Thread.currentThread().sleep(500);
                 		    	
 //                		    	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
 //                                    titleUrl = " \"" + item.getMallName() + "\"";
