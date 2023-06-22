@@ -3,6 +3,7 @@ package com.example.batch.chunk;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -11,10 +12,8 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +30,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
-import com.example.batch.Domain.NaverShoppingItem;
-import com.example.batch.Domain.NaverShoppingResult;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.batch.Domain.Product;
+import com.example.batch.Domain.ProductSearchResponse;
+import com.example.batch.Domain.Products;
+import com.example.batch.Domain.Request;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 
 @Component
 public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecutionListener {
@@ -49,24 +52,19 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<Integer> Count = new ThreadLocal<>();
     private static String account;
     
-	@Value("${naver.api-url}")
+	@Value("${11st.api-url}")
     private String API_URL;
-	@Value("${naver.client-id}")
-    private String CLIENT_ID;
-	@Value("${naver.client-secret}")
-    private String CLIENT_SECRET;
+	@Value("${11st.api-key}")
+    private String API_KEY;
     
 	@Override
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 		// TODO Auto-generated method stub
 		String query = batchSchedule.get().getTarget();
-        int display = 100;
-        int start = (pageNumber.get() - 1) * 100 + 1;
+        int display = 200;
         List<Goods> goodsList = new ArrayList<Goods>();
-        String sort = "sim";
         int total = 0;
-        
-        if(start > 1000) return null;
+        if(pageNumber.get() > 10) return null;
         
         try {
         	log.get().info("Current PageNumber : " + pageNumber.get());
@@ -74,16 +72,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
             // API 요청 URL 생성
-            String apiUrl = API_URL + "?query=" + encodedQuery + "&display=" + display + "&start=" + start + "&sort=" + sort;
+            String apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
 
             // API 요청을 위한 HttpURLConnection 객체 생성
             URL url = new URL(apiUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-
-            // 요청 헤더 설정
-            connection.setRequestProperty("X-Naver-Client-Id", CLIENT_ID);
-            connection.setRequestProperty("X-Naver-Client-Secret", CLIENT_SECRET);
 
             // API 응답 확인
             int responseCode = connection.getResponseCode();
@@ -97,216 +91,123 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 }
                 in.close();
                 
-                // 응답 데이터 출력
-                ObjectMapper objectMapper = new ObjectMapper();
-                NaverShoppingResult result = objectMapper.readValue(response.toString(), NaverShoppingResult.class);
-                total += result.getItems().length;
-                Document doc;
-                
-                // items 출력
-                for (NaverShoppingItem item : result.getItems()) {
-                	Boolean isNotExist = false;
-                	String title = item.getTitle().replaceAll("<b>", "").replaceAll("</b>", "").replaceAll("&amp;", "&");
-                	Goods goods = new Goods();
-                	goods.setName(removeSpecialCharacters(title));
-                	goods.setDetail(item.getLink());
-					goods.setImage(item.getImage());
-					String mallNameTest = item.getMallName().replaceAll("\\s+", " ");
-					item.setMallName(removeSpecialCharacters(item.getMallName().replaceAll("\\s+", " ")));
-					
-					Integer price = null;
-					Integer apiPrice = Integer.parseInt(item.getLprice());
-					Integer crawlPrice = null;
-					String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
-					Elements elems;
-					Count.set(0);
-					
-					while(true) {
-						synchronized (this) {
-							Thread.currentThread().sleep(500);
-							
-							doc = Jsoup.connect(item.getLink()).header("User-Agent", userAgent).get();
-							elems = doc.select("#wrap > div > p");
-							
-							if(elems.size() == 1) {
-								String crawlPriceString = elems.get(0).text().replaceAll("[^0-9]", "");
-								if(crawlPriceString.equals("")) {
-									isNotExist = true;
-									break;
-								}
-								else {
-									crawlPrice = Integer.parseInt(crawlPriceString);
-									if(crawlPrice != null) break;
-								}
-							}
-						}
-						
-						Count.set(Count.get() + 1);
-                    	if(Count.get() > 10) {
-                    		log.get().info("url : {}", item.getLink());
-                    		throw new Exception("Price select count over 10");
-                    	}
-					}
-					
-					if(isNotExist) {
-						total--;
-						continue;
-					}
-					
-                    Count.set(0);
-                    String deliveryUrl = "";
-                    while(true) {
-                    	String titleUrl1 = "";
-                    	String titleUrl2 = "";
-                    	
-                    	synchronized (this) {
-                        	Thread.currentThread().sleep(500);
-                        	
-                        	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
-                        		String[] tokens = mallNameTest.split("[\\s+\\-|]");
-                        		titleUrl1 += " " + tokens[0];
-//                        		if(item.getMallName().contains(" ")) titleUrl1 += " " + item.getMallName().replaceAll(" ", "");
-//                                titleUrl2 += " \"" + tokens[0] + "\"";
-//                                if(item.getMallName().contains(" ")) titleUrl2 += " \"" + item.getMallName().replaceAll(" ", "") + "\"";
-                             }
-                        	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
-                                    + apiPrice
-                                    + "&minPrice="
-                                    + apiPrice
-                                    + "&query="
-                                    + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") 
-                                    + titleUrl1 
-                                    //+ " " + makeSpecialCharactersTokenizer(title, "\"") 
-                                    + titleUrl2
-                                    , "UTF-8");
-                        	
-                		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
-                		    
-                		    elems = doc.select(batchSchedule.get().getTotalSelector());
-                        	if(elems.size() > 0) {
-                        		price = apiPrice;
-                        		break;
+                try {
+                	String responseXml = response.toString();
+                	
+                    JAXBContext jaxbContext = JAXBContext.newInstance(ProductSearchResponse.class);
+                    Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+                    ProductSearchResponse responseString = (ProductSearchResponse) unmarshaller.unmarshal(new StringReader(responseXml));
+
+                    // 접근 및 사용 예시
+                    Request request = responseString.getRequest();
+                    log.get().info("Processing Time: " + request.getProcessingTime());
+
+                    Products products = responseString.getProducts();
+                    log.get().info("Total Count: " + products.getTotalCount());
+
+                    List<Product> productList = products.getProductList();
+                    Document doc;
+                    
+                    for (Product product : productList) {
+                    	Goods goods = new Goods();
+                        String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
+    					Elements elems;
+    					Count.set(0);
+    					
+    					while(true) {
+    						synchronized (this) {
+    							Boolean isOk = true;
+    							
+    							Thread.currentThread().sleep(500);
+    							
+    							goods.setImage(product.getProductImage300());
+    	                    	goods.setDetail(product.getDetailPageUrl());
+//    	                        log.get().info("image: " + product.getProductImage300());
+//    	                        log.get().info("detail: " + product.getDetailPageUrl());
+    							
+    							doc = Jsoup.connect(goods.getDetail()).header("User-Agent", userAgent).get();
+    							elems = doc.select("#layBodyWrap h1.title");
+    							
+    							if(elems.size() == 1) {
+    								String title = elems.get(0).text();
+    								if(!title.equals("")) {
+//    									log.get().info("title : {}", title);
+    									goods.setName(title);
+    								}
+    								else isOk = false;
+    							}
+    							else isOk = false;
+    							
+    							elems = doc.select(".price_wrap span.value");
+    							
+    							if(elems.size() >= 1) {
+    								String price = elems.get(0).text().replaceAll("[^0-9]", "");
+    								if(!price.equals("")) {
+//    									log.get().info("price : {}", price);
+    									goods.setPrice(Integer.parseInt(price));
+    								}
+    								else isOk = false;
+    							}
+    							else isOk = false;
+    							
+    							elems = doc.select("div.delivery > dt");
+    							
+    							if(elems.size() == 1) {
+    								Integer deliveryFee = null;
+    								String delivery = elems.get(0).text();
+    								StringTokenizer st = new StringTokenizer(delivery, " ");
+    								while(st.hasMoreTokens()) {
+    									String token = st.nextToken();
+    									if(token.equals("무료배송")) {
+    										deliveryFee = 0;
+    										break;
+    									}
+    									if(token.contains("원")) {
+    										deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
+    										break;
+    									}
+    								}
+    								if(deliveryFee != null) {
+//    									log.get().info("deliveryFee : {}", deliveryFee);
+    									goods.setDeliveryfee(deliveryFee);
+    								}
+    								else isOk = false;
+    							}
+    							else isOk = false;
+    							
+    							elems = doc.select("#productSellerWrap h4 > a");
+    							
+    							if(elems.size() == 1) {
+    								String seller = elems.get(0).text();
+    								if(!seller.equals("")) {
+    									goods.setSellid(seller);
+//    									log.get().info("seller : {}", seller);
+    								}
+    								else isOk = false;
+    							}
+    							else isOk = false;
+    							
+    							if(isOk) {
+    								goodsList.add(goods);
+    								total++;
+    								break;
+    							}
+    						}
+    						
+    						Count.set(Count.get() + 1);
+                        	if(Count.get() > 10) {
+                        		if(doc.select("#layBodyWrap").size() == 0 || doc.select(".price_wrap").size() == 0) {
+                        			log.get().info("this is not exist dom : {}", goods.getDetail());
+                        			break;
+                        		}
+                        		else {
+                        			throw new Exception("Price select count over 10");
+                        		}
                         	}
-                        	
-//                		    Thread.currentThread().sleep(500);
-//                        	
-//                        	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
-//                                titleUrl = " \"" + item.getMallName().replaceAll(" ", "") + "\"";
-//                             }
-//                        	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
-//                                    + apiPrice
-//                                    + "&minPrice="
-//                                    + apiPrice
-//                                    + "&query="
-//                                    + URLEncoder.encode("\"" + title.replace("&", "&amp;") + "\"" + titleUrl.replace("&", "&amp;"), "UTF-8");
-//                        	
-//                		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
-//                		    
-//                		    elems = doc.select(batchSchedule.get().getTotalSelector());
-//                		    if(elems.size() > 0) {
-//                        		price = apiPrice;
-//                        		break;
-//                        	}
-                		    if(apiPrice != crawlPrice) {
-                		    	Thread.currentThread().sleep(500);
-                		    	
-//                		    	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
-//                                    titleUrl = " \"" + item.getMallName() + "\"";
-//                                 }
-                            	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
-                                        + crawlPrice
-                                        + "&minPrice="
-                                        + crawlPrice
-                                        + "&query="
-                                        + URLEncoder.encode(makeSpecialCharactersTokenizer(title, "") 
-                                        + titleUrl1 
-                                        //+ " " + makeSpecialCharactersTokenizer(title, "\"") 
-                                        + titleUrl2
-                                        , "UTF-8");
-                            	
-                    		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
-                    		    
-                    		    elems = doc.select(batchSchedule.get().getTotalSelector());
-                    		    if(elems.size() > 0) {
-                            		price = crawlPrice;
-                            		break;
-                            	}
-                            	
-//                            	Thread.currentThread().sleep(500);
-//                            	
-//                            	if(!item.getMallName().equals("") && !item.getMallName().equals("네이버")) {
-//                                    titleUrl = " \"" + item.getMallName().replaceAll(" ", "") + "\"";
-//                                 }
-//                            	deliveryUrl = "https://search.shopping.naver.com/search/all?maxPrice="
-//                                        + crawlPrice
-//                                        + "&minPrice="
-//                                        + crawlPrice
-//                                        + "&query="
-//                                        + URLEncoder.encode("\"" + title.replace("&", "&amp;") + "\"" + titleUrl.replace("&", "&amp;"), "UTF-8");
-//                            	
-//                    		    doc = Jsoup.connect(deliveryUrl).header("User-Agent", userAgent).get();
-//                    		    
-//                    		    elems = doc.select(batchSchedule.get().getTotalSelector());
-//                    		    if(elems.size() > 0) {
-//                            		price = crawlPrice;
-//                            		break;
-//                            	}
-                		    }
-                		}
-                    	
-                    	Count.set(Count.get() + 1);
-                    	if(Count.get() > 10) {
-                    		log.get().info("title : {}", title);
-                        	log.get().info("preUrl : {}", makeSpecialCharactersTokenizer(title, ""));
-                        	log.get().info("afterUrl : {}", makeSpecialCharactersTokenizer(title, "\""));
-                    		log.get().info("url : {}", item.getLink());
-                    		log.get().info("deliveryUrl : {}", deliveryUrl);
-                    		throw new Exception("deliveryFee select count over 10");
-                    	}
+    					}
                     }
-//                    log.get().info("title : {}", title);
-//                	log.get().info("preUrl : {}", makeSpecialCharactersTokenizer(title, ""));
-//                	log.get().info("afterUrl : {}", makeSpecialCharactersTokenizer(title, "\""));
-	                Integer deliveryFee = null;
-	                for(Element elem : elems) {
-	                	String mallName = elem.select(batchSchedule.get().getSellerSelector1()).get(0).text();
-	                   if(mallName.equals("쇼핑몰별 최저가")) mallName = "네이버";
-	                   if(mallName.equals("")) mallName = elem.select(batchSchedule.get().getSellerSelector2()).get(0).attr("alt");
-	                   mallName = removeSpecialCharacters(mallName);
-	                   if(item.getMallName().equals(mallName)) {
-	                      if(mallName.equals("네이버")) break;
-	                      Elements elemTarget = elem.select(batchSchedule.get().getDeliveryFeeSelector1());
-	                      if(elemTarget.size() > 0) {
-	                         deliveryFee = makeDeliveryFee(elemTarget.get(0).text());
-	                         break;
-	                      }
-	                      elemTarget = elem.select(batchSchedule.get().getDeliveryFeeSelector2());
-	                      if(elemTarget.size() > 0) {
-	                         deliveryFee = makeDeliveryFee(elemTarget.get(0).text());
-	                         break;
-	                      }
-	                      elemTarget = elem.select(batchSchedule.get().getDeliveryFeeSelector3());
-	                      if(elemTarget.size() > 0) {
-	                         deliveryFee = makeDeliveryFee(elemTarget.get(0).text());
-	                         break;
-	                      }
-	                      throw new Exception("deliveryFee is not detected");
-	                   }
-	                }
-	                
-                goods.setSellid(item.getMallName());
-                goods.setDeliveryfee(deliveryFee);
-                goods.setPrice(price);
-                if((!goods.getSellid().equals("네이버") && deliveryFee == null) || (goods.getSellid().equals("네이버") && deliveryFee != null)) {
-                	log.get().info("title : {}", title);
-                	log.get().info("preUrl : {}", makeSpecialCharactersTokenizer(title, ""));
-                	log.get().info("afterUrl : {}", makeSpecialCharactersTokenizer(title, "\""));
-                	log.get().info("url : {}", item.getLink());
-            		log.get().info("deliveryUrl : {}", deliveryUrl);
-                	log.get().info(goods.toString());
-                	throw new Exception("this is not normal");
-                }
-                goodsList.add(goods);
+                } catch (JAXBException e) {
+                    e.printStackTrace();
                 }
             } else {
                throw new Exception("API 요청에 실패했습니다. 응답 코드: " + responseCode);
