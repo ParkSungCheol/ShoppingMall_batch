@@ -80,7 +80,7 @@ public class BatchApplication implements CommandLineRunner {
 		//삭제로직
 		deleteDocumentsByQuery(client);
         client.close();
-		goodsService.deleteGoodsList();
+//		goodsService.deleteGoodsList();
 		
 		List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList(startBatchNum, endBatchNum);
 		
