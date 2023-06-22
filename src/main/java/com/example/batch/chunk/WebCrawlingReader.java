@@ -152,6 +152,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     							}
     							else isOk = false;
     							
+    							// delivery 1
     							elems = doc.select("div.delivery > dt");
     							
     							if(elems.size() == 1) {
@@ -175,7 +176,34 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     								}
     								else isOk = false;
     							}
-    							else isOk = false;
+    							else {
+    								elems = doc.select("div.delivery_abroad strong");
+    							
+	    							if(elems.size() == 1) {
+	    								Integer deliveryFee = null;
+	    								String delivery = elems.get(0).text();
+	    								StringTokenizer st = new StringTokenizer(delivery, " ");
+	    								while(st.hasMoreTokens()) {
+	    									String token = st.nextToken();
+	    									if(token.equals("무료배송")) {
+	    										deliveryFee = 0;
+	    										break;
+	    									}
+	    									if(token.contains("원")) {
+	    										deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
+	    										break;
+	    									}
+	    								}
+	    								if(deliveryFee != null) {
+	    									log.get().info("deliveryFee : {}", deliveryFee);
+	    									goods.setDeliveryfee(deliveryFee);
+	    								}
+	    								else isOk = false;
+	    							}
+	    							else {
+	    								isOk = false;
+	    							}
+    							}
     							
     							elems = doc.select("#productSellerWrap h4 > a");
     							
