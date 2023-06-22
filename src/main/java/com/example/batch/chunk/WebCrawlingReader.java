@@ -110,8 +110,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     List<Product> productList = products.getProductList();
                     Document doc;
                     
-                    if(productList.size() == 0) return null;
-                    
+                    if(productList == null) return null;
                     for (Product product : productList) {
                     	Goods goods = new Goods();
                         String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
@@ -253,6 +252,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             pageNumber.set(pageNumber.get() + 1);
             log.get().info("#### crawling END ####");
             
+            if(goodsList.size() == 0) return null;
             return goodsList;
         } catch (IOException e) {
             e.printStackTrace();
