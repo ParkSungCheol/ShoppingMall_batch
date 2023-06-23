@@ -121,7 +121,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     						synchronized (this) {
     							Boolean isOk = true;
     							
-    							Thread.currentThread().sleep(500);
+    							Thread.currentThread().sleep(125);
     							
     							goods.setImage(product.getProductImage300());
     	                    	goods.setDetail(product.getDetailPageUrl());
@@ -155,24 +155,34 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     							
     							// delivery 1
     							elems = doc.select("div.delivery > dt");
+    							if(elems.size() == 0) elems = doc.select("div.delivery strong");
+    							if(elems.size() == 0) elems = doc.select("div.delivery_abroad > dt");
     							if(elems.size() == 0) elems = doc.select("div.delivery_abroad strong");
     							
     							if(elems.size() == 1) {
     								Integer deliveryFee = null;
     								String delivery = elems.get(0).text();
     								StringTokenizer st = new StringTokenizer(delivery, " ");
+    								boolean isExist = false;
     								while(st.hasMoreTokens()) {
     									String token = st.nextToken();
     									if(token.equals("무료배송")) {
     										deliveryFee = 0;
+    										isExist = true;
     										break;
     									}
     									if(token.contains("원")) {
     										deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
+    										isExist = true;
+    										break;
+    									}
+    									if(token.contains("상품상세참고")) {
+    										deliveryFee = null;
+    										isExist = true;
     										break;
     									}
     								}
-    								if(deliveryFee != null) {
+    								if(isExist) {
     									log.get().info("deliveryFee : {}", deliveryFee);
     									goods.setDeliveryfee(deliveryFee);
     								}
