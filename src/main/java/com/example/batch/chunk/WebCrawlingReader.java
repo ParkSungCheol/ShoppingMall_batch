@@ -126,11 +126,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     					while(true) {
 							Boolean isOk = true;
 							
-							goods.setImage(product.getProductImage300());
-	                    	goods.setDetail(product.getDetailPageUrl());
-	                        log.get().info("image: " + product.getProductImage300());
-	                        log.get().info("detail: " + product.getDetailPageUrl());
-							
 	                        while (true) {
 		                        if(Thread.currentThread().getName().contains(threadNumber) ) {
 		                        	doc = Jsoup.connect(goods.getDetail()).header("User-Agent", userAgent).get();
@@ -141,6 +136,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 		                        	Thread.currentThread().sleep(100);
 		                        }
 	                        }
+	                        
+	                        log.get().info("image: " + product.getProductImage300());
+	                        log.get().info("detail: " + product.getDetailPageUrl());
+	                        goods.setImage(product.getProductImage300());
+	                    	goods.setDetail(product.getDetailPageUrl());
+	                    	
 							elems = doc.select("#layBodyWrap h1.title");
 							
 							if(elems.size() == 1) {
@@ -153,6 +154,16 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							}
 							else isOk = false;
 							
+							//렌탈인지 검증
+							elems = doc.select("#layBodyWrap h1.title .category");
+							if(elems.size() == 1) {
+								String isRental = elems.get(0).text();
+								if(isRental.equals("렌탈")) {
+									log.get().info("해당 상품은 렌탈상품입니다.");
+									break;
+								}
+							}
+								
 							elems = doc.select(".price_wrap span.value");
 							
 							if(elems.size() >= 1) {
