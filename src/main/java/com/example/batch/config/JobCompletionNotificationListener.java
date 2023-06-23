@@ -64,6 +64,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     	String msg = "[account] " + account + "\n[url] " + url + "\n[result] : ";
     	int flag = 0;
     	int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
+    	int insertSize = (int) jobExecution.getExecutionContext().get("insertSize");
 		Date startTime = jobExecution.getStartTime();
 		// 대한민국 표준시(KST)로 변환하기
         TimeZone kstTimeZone = TimeZone.getTimeZone("Asia/Seoul");
@@ -77,7 +78,8 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 			log.info("############## FAILED ###############");
 			msg += "FAILED \n";
 			msg += "totalSize : " + totalSize + " ";
-			msg += "insertedSize : " + (totalSize) + "\n";
+			msg += "insertedSize : " + insertSize + "\n";
+			msg += "notInserted : " + (totalSize - insertSize) + "\n";
 			msg += "startTime : " + startFormattedTime + "\n";
 			msg += "runTime : " + executionFormattedTime + "\n";
 			msg += "[ errorLog ]\n" + jobExecution.getAllFailureExceptions().get(0).getMessage();
@@ -85,7 +87,8 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 		else if(jobExecution.getStatus() == BatchStatus.COMPLETED) {
 			msg += "COMPLETED \n";
 			msg += "totalSize : " + totalSize + " ";
-			msg += "insertedSize : " + (totalSize) + "\n";
+			msg += "insertedSize : " + insertSize + "\n";
+			msg += "notInserted : " + (totalSize - insertSize) + "\n";
 			msg += "startTime : " + startFormattedTime + "\n";
 			msg += "runTime : " + executionFormattedTime + "\n";
 			flag = 1;

@@ -45,12 +45,14 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	return LoggerFactory.getLogger(this.getClass());
     });
     private static final ThreadLocal<Integer> totalSize = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> insertSize = new ThreadLocal<>();
     private static final ThreadLocal<BatchSchedule> batchSchedule = new ThreadLocal<>();
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
     private static final ThreadLocal<Integer> Count = new ThreadLocal<>();
     private static String account;
+    private static String threadNumber = "1";
     
 	@Value("${11st.api-url}")
     private String API_URL;
@@ -64,6 +66,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         int display = 200;
         List<Goods> goodsList = new ArrayList<Goods>();
         int total = 0;
+        int insert = 0;
         if(pageNumber.get() > 10) return null;
         
         try {
@@ -111,6 +114,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     Document doc;
                     
                     if(productList == null) return null;
+                    
+                    total += productList.size();
+                    
                     for (Product product : productList) {
                     	Goods goods = new Goods();
                         String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
@@ -118,93 +124,100 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     					Count.set(0);
     					
     					while(true) {
-    						synchronized (this) {
-    							Boolean isOk = true;
-    							
-    							goods.setImage(product.getProductImage300());
-    	                    	goods.setDetail(product.getDetailPageUrl());
-    	                        log.get().info("image: " + product.getProductImage300());
-    	                        log.get().info("detail: " + product.getDetailPageUrl());
-    							
-    							doc = Jsoup.connect(goods.getDetail()).header("User-Agent", userAgent).get();
-    							elems = doc.select("#layBodyWrap h1.title");
-    							
-    							if(elems.size() == 1) {
-    								String title = elems.get(0).text();
-    								if(!title.equals("")) {
-    									log.get().info("title : {}", title);
-    									goods.setName(title);
-    								}
-    								else isOk = false;
-    							}
-    							else isOk = false;
-    							
-    							elems = doc.select(".price_wrap span.value");
-    							
-    							if(elems.size() >= 1) {
-    								String price = elems.get(0).text().replaceAll("[^0-9]", "");
-    								if(!price.equals("")) {
-    									log.get().info("price : {}", price);
-    									goods.setPrice(Integer.parseInt(price));
-    								}
-    								else isOk = false;
-    							}
-    							else isOk = false;
-    							
-    							// delivery 1
-    							elems = doc.select("div.delivery > dt");
-    							if(elems.size() == 0) elems = doc.select("div.delivery strong");
-    							if(elems.size() == 0) elems = doc.select("div.delivery_abroad > dt");
-    							if(elems.size() == 0) elems = doc.select("div.delivery_abroad strong");
-    							
-    							if(elems.size() == 1) {
-    								Integer deliveryFee = null;
-    								String delivery = elems.get(0).text();
-    								log.get().info("delivery Check : {}", delivery);
-    								StringTokenizer st = new StringTokenizer(delivery, " ");
-    								boolean isExist = false;
-    								while(st.hasMoreTokens()) {
-    									String token = st.nextToken();
-    									if(token.contains("무료")) {
-    										deliveryFee = 0;
-    										isExist = true;
-    										break;
-    									}
-    									if(token.contains("원")) {
-    										deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
-    										isExist = true;
-    										break;
-    									}
-    								}
-    								if(!isExist && delivery.contains("착불")) {
+							Boolean isOk = true;
+							
+							goods.setImage(product.getProductImage300());
+	                    	goods.setDetail(product.getDetailPageUrl());
+	                        log.get().info("image: " + product.getProductImage300());
+	                        log.get().info("detail: " + product.getDetailPageUrl());
+							
+	                        while (true) {
+		                        if(Thread.currentThread().getName().contains(threadNumber) ) {
+		                        	doc = Jsoup.connect(goods.getDetail()).header("User-Agent", userAgent).get();
+		                        	threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
+		                        	break;
+		                        }
+		                        else {
+		                        	Thread.currentThread().sleep(100);
+		                        }
+	                        }
+							elems = doc.select("#layBodyWrap h1.title");
+							
+							if(elems.size() == 1) {
+								String title = elems.get(0).text();
+								if(!title.equals("")) {
+									log.get().info("title : {}", title);
+									goods.setName(title);
+								}
+								else isOk = false;
+							}
+							else isOk = false;
+							
+							elems = doc.select(".price_wrap span.value");
+							
+							if(elems.size() >= 1) {
+								String price = elems.get(0).text().replaceAll("[^0-9]", "");
+								if(!price.equals("")) {
+									log.get().info("price : {}", price);
+									goods.setPrice(Integer.parseInt(price));
+								}
+								else isOk = false;
+							}
+							else isOk = false;
+							
+							// delivery 1
+							elems = doc.select("div.delivery > dt");
+							if(elems.size() == 0) elems = doc.select("div.delivery strong");
+							if(elems.size() == 0) elems = doc.select("div.delivery_abroad > dt");
+							if(elems.size() == 0) elems = doc.select("div.delivery_abroad strong");
+							
+							if(elems.size() == 1) {
+								Integer deliveryFee = null;
+								String delivery = elems.get(0).text();
+								log.get().info("delivery Check : {}", delivery);
+								StringTokenizer st = new StringTokenizer(delivery, " ");
+								boolean isExist = false;
+								while(st.hasMoreTokens()) {
+									String token = st.nextToken();
+									if(token.contains("무료")) {
+										deliveryFee = 0;
 										isExist = true;
+										break;
 									}
-    								if(isExist) {
-    									log.get().info("deliveryFee : {}", deliveryFee);
-    									goods.setDeliveryfee(deliveryFee);
-    								}
-    								else isOk = false;
-    							}
-    							else isOk = false;
-    							
-    							elems = doc.select("#productSellerWrap h4 > a");
-    							
-    							if(elems.size() == 1) {
-    								String seller = elems.get(0).text();
-    								if(!seller.equals("")) {
-    									goods.setSellid(seller);
-    									log.get().info("seller : {}", seller);
-    								}
-    								else isOk = false;
-    							}
-    							else isOk = false;
-    							
-    							if(isOk) {
-    								goodsList.add(goods);
-    								total++;
-    								break;
-    							}
-    						}
+									if(token.contains("원")) {
+										deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
+										isExist = true;
+										break;
+									}
+								}
+								if(!isExist && delivery.contains("착불")) {
+									isExist = true;
+								}
+								if(isExist) {
+									log.get().info("deliveryFee : {}", deliveryFee);
+									goods.setDeliveryfee(deliveryFee);
+								}
+								else isOk = false;
+							}
+							else isOk = false;
+							
+							elems = doc.select("#productSellerWrap h4 > a");
+							
+							if(elems.size() == 1) {
+								String seller = elems.get(0).text();
+								if(!seller.equals("")) {
+									goods.setSellid(seller);
+									log.get().info("seller : {}", seller);
+								}
+								else isOk = false;
+							}
+							else isOk = false;
+							
+							if(isOk) {
+								goodsList.add(goods);
+								insert++;
+								break;
+							}
     						
     						Count.set(Count.get() + 1);
                         	if(Count.get() > 10) {
@@ -228,8 +241,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             // 연결 해제
             connection.disconnect();
             
-            log.get().info("target : " + total + ", inserted : " + total);
+            log.get().info("target : " + total + ", inserted : " + insert);
             totalSize.set(totalSize.get() + total);
+            insertSize.set(insertSize.get() + insert);
             pageNumber.set(pageNumber.get() + 1);
             log.get().info("#### crawling END ####");
             
@@ -285,6 +299,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         } else {
         	totalSize.set(0); // 최초 실행 시 totalSize은 0로 초기화
         }
+        if (executionContext.containsKey("insertSize")) {
+        	insertSize.set((int) executionContext.get("insertSize"));
+        } else {
+        	insertSize.set(0); // 최초 실행 시 insertSize은 0로 초기화
+        }
 		jobExecution.set(stepExecution.getJobExecution());
 	}
 
@@ -296,6 +315,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 		executionContext.put("account", account);
         executionContext.put("startPageNum", pageNumber.get());
         executionContext.put("totalSize", totalSize.get());
+        executionContext.put("insertSize", insertSize.get());
 		return ExitStatus.COMPLETED;
 	}
 	
