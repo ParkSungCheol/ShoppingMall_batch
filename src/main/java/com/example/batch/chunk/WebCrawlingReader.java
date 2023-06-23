@@ -165,7 +165,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     								boolean isExist = false;
     								while(st.hasMoreTokens()) {
     									String token = st.nextToken();
-    									if(token.equals("무료")) {
+    									if(token.contains("무료")) {
     										deliveryFee = 0;
     										isExist = true;
     										break;
@@ -213,7 +213,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                         			break;
                         		}
                         		else {
-                        			log.get().info("doc : {}", doc);
                         			throw new Exception("Price select count over 10");
                         		}
                         	}
