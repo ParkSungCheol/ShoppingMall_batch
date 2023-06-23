@@ -162,6 +162,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     							if(elems.size() == 1) {
     								Integer deliveryFee = null;
     								String delivery = elems.get(0).text();
+    								log.get().info("delivery Check : {}", delivery);
     								StringTokenizer st = new StringTokenizer(delivery, " ");
     								boolean isExist = false;
     								while(st.hasMoreTokens()) {
@@ -176,12 +177,10 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     										isExist = true;
     										break;
     									}
-    									if(token.contains("상품상세참고")) {
-    										deliveryFee = null;
-    										isExist = true;
-    										break;
-    									}
     								}
+    								if(!isExist && delivery.contains("착불")) {
+										isExist = true;
+									}
     								if(isExist) {
     									log.get().info("deliveryFee : {}", deliveryFee);
     									goods.setDeliveryfee(deliveryFee);
