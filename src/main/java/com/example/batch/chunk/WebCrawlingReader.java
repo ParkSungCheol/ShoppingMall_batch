@@ -121,8 +121,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     						synchronized (this) {
     							Boolean isOk = true;
     							
-    							Thread.currentThread().sleep(125);
-    							
     							goods.setImage(product.getProductImage300());
     	                    	goods.setDetail(product.getDetailPageUrl());
     	                        log.get().info("image: " + product.getProductImage300());
@@ -167,7 +165,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     								boolean isExist = false;
     								while(st.hasMoreTokens()) {
     									String token = st.nextToken();
-    									if(token.equals("무료배송")) {
+    									if(token.equals("무료")) {
     										deliveryFee = 0;
     										isExist = true;
     										break;
