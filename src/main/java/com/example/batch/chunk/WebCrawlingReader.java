@@ -213,6 +213,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                         			break;
                         		}
                         		else {
+                        			log.get().info("doc : {}", doc);
                         			throw new Exception("Price select count over 10");
                         		}
                         	}
