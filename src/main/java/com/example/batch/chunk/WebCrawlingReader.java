@@ -128,7 +128,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							
 	                        while (true) {
 		                        if(Thread.currentThread().getName().contains(threadNumber) ) {
-		                        	doc = Jsoup.connect(goods.getDetail()).header("User-Agent", userAgent).get();
+		                        	doc = Jsoup.connect(product.getDetailPageUrl()).header("User-Agent", userAgent).get();
 		                        	threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
 		                        	break;
 		                        }
@@ -136,7 +136,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 		                        	Thread.currentThread().sleep(100);
 		                        }
 	                        }
-	                        
+							
 	                        log.get().info("image: " + product.getProductImage300());
 	                        log.get().info("detail: " + product.getDetailPageUrl());
 	                        goods.setImage(product.getProductImage300());
@@ -231,13 +231,13 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							}
     						
     						Count.set(Count.get() + 1);
-                        	if(Count.get() > 10) {
+                        	if(Count.get() > 3) {
                         		if(doc.select("#layBodyWrap").size() == 0 || doc.select(".price_wrap").size() == 0) {
                         			log.get().info("this is not exist dom : {}", goods.getDetail());
                         			break;
                         		}
                         		else {
-                        			throw new Exception("Price select count over 10");
+                        			throw new Exception("Price select count over 3");
                         		}
                         	}
     					}
