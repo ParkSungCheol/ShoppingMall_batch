@@ -114,6 +114,7 @@ public class BatchApplication implements CommandLineRunner {
                             .addString("deliveryFeeSelector1", batchSchedule.getDeliveryFeeSelector1())
                             .addString("deliveryFeeSelector2", batchSchedule.getDeliveryFeeSelector2())
                             .addString("deliveryFeeSelector3", batchSchedule.getDeliveryFeeSelector3())
+                            .addString("deliveryFeeSelector4", batchSchedule.getDeliveryFeeSelector4())
                             .addString("deliveryFeeLocation", Integer.toString(batchSchedule.getDeliveryFeeLocation() != null? batchSchedule.getDeliveryFeeLocation() : 0))
                             .addString("sellerSelector1", batchSchedule.getSellerSelector1())
                             .addString("sellerSelector2", batchSchedule.getSellerSelector2())

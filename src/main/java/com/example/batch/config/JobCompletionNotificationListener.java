@@ -30,6 +30,8 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private static long jobCount = -1;
     private SlackService slackService;
     private WebDriverManager webDriverManager;
+    private static int failedCount = 0;
+    private static int successedCount = 0;
     
     public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager) {
         this.dataSource = dataSource;
@@ -76,6 +78,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
         String executionFormattedTime = formatExecutionTime(executionTime);
 		if(jobExecution.getStatus() == BatchStatus.FAILED) {
 			log.info("############## FAILED ###############");
+			failedCount++;
 			msg += "FAILED \n";
 			msg += "totalSize : " + totalSize + " ";
 			msg += "insertedSize : " + insertSize + "\n";
@@ -85,6 +88,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 			msg += "[ errorLog ]\n" + jobExecution.getAllFailureExceptions().get(0).getMessage();
 		}
 		else if(jobExecution.getStatus() == BatchStatus.COMPLETED) {
+			successedCount++;
 			msg += "COMPLETED \n";
 			msg += "totalSize : " + totalSize + " ";
 			msg += "insertedSize : " + insertSize + "\n";
@@ -113,7 +117,10 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
                 }
     		}
     		
-    		slackService.call(1, "All Job Complete!!");
+    		String finalMsg = "All Job Complete\n";
+    		finalMsg += "Failed : " + failedCount + "\n";
+    		finalMsg += "Successed : " + successedCount;
+    		slackService.call(1, finalMsg);
     		
     		tte.shutdown();
     	}

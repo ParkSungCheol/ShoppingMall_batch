@@ -39,6 +39,8 @@ public class BatchSchedule {
 	@JsonProperty
     private String deliveryFeeSelector3;
 	@JsonProperty
+    private String deliveryFeeSelector4;
+	@JsonProperty
     private Integer deliveryFeeLocation;
 	@JsonProperty
     private String sellerSelector1;
@@ -213,5 +215,11 @@ public class BatchSchedule {
 	}
 	public void setTarget(String target) {
 		this.target = target;
+	}
+	public String getDeliveryFeeSelector4() {
+		return deliveryFeeSelector4;
+	}
+	public void setDeliveryFeeSelector4(String deliveryFeeSelector4) {
+		this.deliveryFeeSelector4 = deliveryFeeSelector4;
 	}
 }

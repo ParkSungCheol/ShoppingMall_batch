@@ -20,6 +20,7 @@
 		,	SI.DELIVERY_FEE_SELECTOR_1 AS delivery_fee_selector_1
 		,	SI.DELIVERY_FEE_SELECTOR_2 AS delivery_fee_selector_2
 		,	SI.DELIVERY_FEE_SELECTOR_3 AS delivery_fee_selector_3
+		,	SI.DELIVERY_FEE_SELECTOR_4 AS delivery_fee_selector_4
 		,	SI.DELIVERY_FEE_LOCATION AS delivery_fee_location
 		,	SI.SELLER_SELECTOR_1 AS seller_selector_1
 		,	SI.SELLER_SELECTOR_2 AS seller_selector_2

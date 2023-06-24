@@ -67,7 +67,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         List<Goods> goodsList = new ArrayList<Goods>();
         int total = 0;
         int insert = 0;
-        if(pageNumber.get() > 10) return null;
+        if(pageNumber.get() > 125) return null;
         
         try {
         	log.get().info("Current PageNumber : " + pageNumber.get());
@@ -75,7 +75,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
             // API 요청 URL 생성
-            String apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
+            String apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&sortCd=CP" + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
 
             // API 요청을 위한 HttpURLConnection 객체 생성
             URL url = new URL(apiUrl);
@@ -116,10 +116,10 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     if(productList == null) return null;
                     
                     total += productList.size();
+                    String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
                     
                     for (Product product : productList) {
                     	Goods goods = new Goods();
-                        String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
     					Elements elems;
     					Count.set(0);
     					
@@ -127,13 +127,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							Boolean isOk = true;
 							
 	                        while (true) {
-		                        if(Thread.currentThread().getName().contains(threadNumber) ) {
+	                        	Thread.currentThread().sleep(100);
+		                        if(Thread.currentThread().getName().contains(threadNumber) ) {													
 		                        	doc = Jsoup.connect(product.getDetailPageUrl()).header("User-Agent", userAgent).get();
 		                        	threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
 		                        	break;
-		                        }
-		                        else {
-		                        	Thread.currentThread().sleep(100);
 		                        }
 	                        }
 							
@@ -142,7 +140,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                        goods.setImage(product.getProductImage300());
 	                    	goods.setDetail(product.getDetailPageUrl());
 	                    	
-							elems = doc.select("#layBodyWrap h1.title");
+							elems = doc.select(batchSchedule.get().getTitleSelector1());
 							
 							if(elems.size() == 1) {
 								String title = elems.get(0).text();
@@ -155,7 +153,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							else isOk = false;
 							
 							//렌탈인지 검증
-							elems = doc.select("#layBodyWrap h1.title .category");
+							elems = doc.select(batchSchedule.get().getTitleSelector2());
 							if(elems.size() == 1) {
 								String isRental = elems.get(0).text();
 								if(isRental.equals("렌탈")) {
@@ -164,7 +162,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 								}
 							}
 								
-							elems = doc.select(".price_wrap span.value");
+							elems = doc.select(batchSchedule.get().getPriceSelector1());
 							
 							if(elems.size() >= 1) {
 								String price = elems.get(0).text().replaceAll("[^0-9]", "");
@@ -177,10 +175,10 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							else isOk = false;
 							
 							// delivery 1
-							elems = doc.select("div.delivery > dt");
-							if(elems.size() == 0) elems = doc.select("div.delivery strong");
-							if(elems.size() == 0) elems = doc.select("div.delivery_abroad > dt");
-							if(elems.size() == 0) elems = doc.select("div.delivery_abroad strong");
+							elems = doc.select(batchSchedule.get().getDeliveryFeeSelector1());
+							if(elems.size() == 0) elems = doc.select(batchSchedule.get().getDeliveryFeeSelector2());
+							if(elems.size() == 0) elems = doc.select(batchSchedule.get().getDeliveryFeeSelector3());
+							if(elems.size() == 0) elems = doc.select(batchSchedule.get().getDeliveryFeeSelector4());
 							
 							if(elems.size() == 1) {
 								Integer deliveryFee = null;
@@ -190,7 +188,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 								boolean isExist = false;
 								while(st.hasMoreTokens()) {
 									String token = st.nextToken();
-									if(token.contains("무료")) {
+									if(token.contains("무료") || token.contains("SMS")) {
 										deliveryFee = 0;
 										isExist = true;
 										break;
@@ -201,7 +199,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 										break;
 									}
 								}
-								if(!isExist && delivery.contains("착불")) {
+								if(!isExist && (delivery.contains("착불") || delivery.contains("참조"))) {
 									isExist = true;
 								}
 								if(isExist) {
@@ -212,7 +210,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							}
 							else isOk = false;
 							
-							elems = doc.select("#productSellerWrap h4 > a");
+							elems = doc.select(batchSchedule.get().getSellerSelector1());
 							
 							if(elems.size() == 1) {
 								String seller = elems.get(0).text();
@@ -232,7 +230,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     						
     						Count.set(Count.get() + 1);
                         	if(Count.get() > 3) {
-                        		if(doc.select("#layBodyWrap").size() == 0 || doc.select(".price_wrap").size() == 0) {
+                        		if(doc.select(batchSchedule.get().getTitleSelector3()).size() == 0 || doc.select(batchSchedule.get().getPriceSelector2()).size() == 0) {
                         			log.get().info("this is not exist dom : {}", goods.getDetail());
                         			break;
                         		}
@@ -285,6 +283,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	batchSchedule.get().setDeliveryFeeSelector1((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeSelector1"));
     	batchSchedule.get().setDeliveryFeeSelector2((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeSelector2"));
     	batchSchedule.get().setDeliveryFeeSelector3((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeSelector3"));
+    	batchSchedule.get().setDeliveryFeeSelector4((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeSelector4"));
     	batchSchedule.get().setDeliveryFeeLocation(stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeLocation") != null? Integer.parseInt((String) stepExecution.getJobExecution().getJobParameters().getString("deliveryFeeLocation")) : 0);
     	batchSchedule.get().setSellerSelector1((String) stepExecution.getJobExecution().getJobParameters().getString("sellerSelector1"));
     	batchSchedule.get().setSellerSelector2((String) stepExecution.getJobExecution().getJobParameters().getString("sellerSelector2"));
