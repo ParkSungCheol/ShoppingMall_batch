@@ -60,10 +60,10 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     public void afterJob(JobExecution jobExecution){
     	jobCount--;
     	log.info("jobCount : {}", jobCount);
-    	String url = (String) jobExecution.getExecutionContext().get("url");
+    	String target = (String) jobExecution.getExecutionContext().get("target");
     	String account = (String) jobExecution.getExecutionContext().get("account");
-    	log.info("url : {}", url);
-    	String msg = "[account] " + account + "\n[url] " + url + "\n[result] : ";
+    	log.info("target : {}", target);
+    	String msg = "[account] " + account + "\n[target] " + target + "\n[result] : ";
     	int flag = 0;
     	int totalSize = (int) jobExecution.getExecutionContext().get("totalSize");
     	int insertSize = (int) jobExecution.getExecutionContext().get("insertSize");

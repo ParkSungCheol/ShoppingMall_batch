@@ -96,7 +96,7 @@ public class BatchApplication implements CommandLineRunner {
 //            	log.get().info("batchSchedules SIZE : " + subList.size());
             	driver_num++;
             	for (BatchSchedule batchSchedule : subList) {
-                	log.get().info("batchSchedules : " + batchSchedule.getUrl());
+                	log.get().info("batchSchedules : " + batchSchedule.getTarget());
                     JobParameters jobParameters = new JobParametersBuilder()
                     		.addString("batchNum", Integer.toString(batchSchedule.getBatchNum()))
                     		.addString("batchName", batchSchedule.getBatchName())

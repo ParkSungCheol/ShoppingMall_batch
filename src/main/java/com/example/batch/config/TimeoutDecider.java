@@ -33,7 +33,7 @@ public class TimeoutDecider implements JobExecutionDecider {
 
         int currentRetryCount = retryCounts.get(jobExecutionId);
         String msg = "[account] " + jobExecution.getExecutionContext().get("account") + "\n";
-        msg += "[url] " + jobExecution.getExecutionContext().get("url") + "\n";
+        msg += "[target] " + jobExecution.getExecutionContext().get("target") + "\n";
         msg += "[startPageNum] " + jobExecution.getExecutionContext().get("startPageNum") + "\n";
         retryCounts.put(jobExecutionId, currentRetryCount - 1);
         msg += "[remainCount] " + retryCounts.get(jobExecutionId) + "번 남았습니다.\n";

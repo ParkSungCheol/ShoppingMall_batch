@@ -67,7 +67,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         List<Goods> goodsList = new ArrayList<Goods>();
         int total = 0;
         int insert = 0;
-        if(pageNumber.get() > 125) return null;
+        if(pageNumber.get() > 25) return null;
         
         try {
         	log.get().info("Current PageNumber : " + pageNumber.get());
@@ -75,7 +75,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
             // API 요청 URL 생성
-            String apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&sortCd=CP" + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
+            String apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&sortCd=N" + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
 
             // API 요청을 위한 HttpURLConnection 객체 생성
             URL url = new URL(apiUrl);
@@ -296,7 +296,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	batchSchedule.get().setImageSelector((String) stepExecution.getJobExecution().getJobParameters().getString("imageSelector"));
     	stepEx.set(stepExecution);
     	account = (String) stepExecution.getJobExecution().getJobParameters().getString("account");
-    	log.get().info("url : " + batchSchedule.get().getUrl());
+    	log.get().info("target : " + batchSchedule.get().getTarget());
 		// 이전 실행에서 저장한 pageNum을 가져옴
         ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
         if (executionContext.containsKey("startPageNum")) {
@@ -321,7 +321,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	public ExitStatus afterStep(StepExecution stepExecution) {
 		// TODO Auto-generated method stub
 		ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
-		executionContext.put("url", batchSchedule.get().getUrl());
+		executionContext.put("target", batchSchedule.get().getTarget());
 		executionContext.put("account", account);
         executionContext.put("startPageNum", pageNumber.get());
         executionContext.put("totalSize", totalSize.get());
