@@ -8,10 +8,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
@@ -28,12 +29,14 @@ import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
 import com.example.batch.Domain.Product;
 import com.example.batch.Domain.ProductSearchResponse;
 import com.example.batch.Domain.Products;
 import com.example.batch.Domain.Request;
+
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
@@ -52,6 +55,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
     private static final ThreadLocal<Integer> Count = new ThreadLocal<>();
     private static String account;
+    private static Set<String> set = new HashSet<String>();
     private static String threadNumber = "1";
     
 	@Value("${11st.api-url}")
@@ -127,6 +131,10 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							Boolean isOk = true;
 							
 	                        while (true) {
+	                        	if(!set.contains(threadNumber)) {
+	                        		threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
+	                        		continue;
+	                        	}
 	                        	Thread.currentThread().sleep(100);
 		                        if(Thread.currentThread().getName().contains(threadNumber) ) {													
 		                        	doc = Jsoup.connect(product.getDetailPageUrl()).header("User-Agent", userAgent).get();
@@ -315,6 +323,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         	insertSize.set(0); // 최초 실행 시 insertSize은 0로 초기화
         }
 		jobExecution.set(stepExecution.getJobExecution());
+		set.add(Thread.currentThread().getName().replaceAll("[^0-9]", ""));
 	}
 
 	@Override
@@ -326,92 +335,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         executionContext.put("startPageNum", pageNumber.get());
         executionContext.put("totalSize", totalSize.get());
         executionContext.put("insertSize", insertSize.get());
+        set.remove(Thread.currentThread().getName().replaceAll("[^0-9]", ""));
 		return ExitStatus.COMPLETED;
 	}
-	
-	
-	private Integer makeDeliveryFee(String input) throws Exception{
-	      if (input.contains("배송비")) {
-	            // "배송비" 다음부터 "~ 원"까지의 값을 추출
-	            int startIndex = input.indexOf("배송비") + "배송비".length();
-	            int endIndex = input.indexOf("원", startIndex);
-
-	            if (startIndex != -1 && endIndex != -1) {
-	                String deliveryFeeString = input.substring(startIndex, endIndex);
-	                deliveryFeeString = deliveryFeeString.replaceAll("[^0-9]", ""); // 숫자만 추출
-
-	                if (!deliveryFeeString.isEmpty()) {
-	                    int deliveryFee = Integer.parseInt(deliveryFeeString);
-	                    return deliveryFee;
-	                }
-	                else return 0;
-	            }
-	            else return 0;
-	        }
-	      else {
-	         throw new Exception("배송비 is not contained");
-	      }
-	   }
-    
-    public static String removeSpecialCharacters(String text) {
-        // 정규 표현식을 사용하여 특수 문자 제거
-        String pattern = "[^.a-zA-Z0-9가-힣\\s]";
-        text = text.replaceAll(pattern, "");
-        return text;
-    }
-    
-    public String makeSpecialCharactersTokenizer(String input, String delimeter) {
-    	String regex = "[^\\p{L}\\p{Z}\\p{N}.]+";
-    	String numberRegex = "^\\d+$";
-    	
-    	StringTokenizer st = new StringTokenizer(input, " ");
-    	
-    	String processedString = "" + delimeter;
-    	while(st.hasMoreTokens()) {
-    		String target = st.nextToken();
-    		while(true) {
-	    		// 특정 토큰의 마지막 글자가 숫자인 경우
-	            if (Character.isDigit(target.charAt(target.length() - 1))) {
-	                if (st.hasMoreTokens()) {
-	                    String nextToken = st.nextToken();
-	                    if(Character.isDigit(nextToken.charAt(nextToken.length() - 1))) continue;
-	                    else target += " "; // 다음 토큰과 붙여서 문자열 생성
-	                }
-	                else break;
-	            }
-	            else break;
-    		}
-	        Pattern pattern = Pattern.compile(regex);
-	        Matcher matcher = pattern.matcher(target);
-	
-	        if (matcher.find()) {
-	        	processedString = processedString.trim() + delimeter + " " + delimeter;
-	        	continue;
-	        }
-	        String token = target.trim();
-	        if (!token.isEmpty() && target.length() > 1) {
-	            processedString += token + " ";
-	        }
-    	}
-
-        processedString = processedString.replaceAll("\\s+", " ").trim();
-        int lastSpaceIndex = processedString.lastIndexOf(" ");
-        
-        if (lastSpaceIndex != -1) {
-            // 띄어쓰기가 포함되어 있지 않은 경우 원본 문자열을 그대로 반환
-        	String pre = processedString.substring(0, lastSpaceIndex + 1);
-        	String last = processedString.substring(lastSpaceIndex + 1);
-        	Pattern pattern = Pattern.compile(numberRegex);
-	        Matcher matcher = pattern.matcher(last);
-	        
-	        if(matcher.find()) {
-	        	last = "";
-	        }
-	        processedString = pre + last;
-        }
-        
-        processedString += delimeter; // 중복 공백 제거
-
-        return processedString;
-    }
 }
