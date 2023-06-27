@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -17,7 +19,13 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
+import com.example.batch.Domain.JobStatus;
+import com.example.batch.Domain.Search;
+import com.example.batch.Domain.esGoods;
 import com.example.batch.Service.BatchScheduleService;
+import com.example.batch.Service.ElasticsearchService;
+import com.example.batch.Service.JobStatusService;
+import com.example.batch.Service.SearchService;
 import com.example.batch.Service.SlackService;
 
 @Component
@@ -32,12 +40,18 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     private WebDriverManager webDriverManager;
     private static int failedCount = 0;
     private static int successedCount = 0;
+	private JobStatusService jobStatusService;
+	private SearchService searchService;
+	private ElasticsearchService elasticsearchService;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
         this.webDriverManager = webDriverManager;
+        this.jobStatusService = jobStatusService;
+        this.searchService = searchService;
+        this.elasticsearchService = elasticsearchService;
     }
 
     @Override
@@ -121,6 +135,31 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		finalMsg += "Failed : " + failedCount + "\n";
     		finalMsg += "Successed : " + successedCount;
     		slackService.call(1, finalMsg);
+    		
+    		JobStatus jobStatus = new JobStatus();
+    		jobStatus.setBatchId(Integer.parseInt(account));
+    		jobStatusService.endJobStatus(jobStatus);
+    		
+    		List<JobStatus> jobStatusList = jobStatusService.selectPJobStatus();
+    		if(jobStatusList.size() == 0) {
+    			// 가격 설정값보다 낮은지 검증 후 핸드폰으로 전송
+    			List<Search> searchList = searchService.selectSearch();
+    			// 시간대를 Asia/Seoul로 설정
+    	        TimeZone seoulTimeZone = TimeZone.getTimeZone("Asia/Seoul");
+    	        TimeZone.setDefault(seoulTimeZone);
+
+    	        // 현재 날짜를 YYYY-MM-DD 형식으로 가져오기
+    	        LocalDate currentDate = LocalDate.now();
+    	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    	        String formattedDate = currentDate.format(formatter);
+    			for(Search search : searchList) {
+    				List<esGoods> goodsList = elasticsearchService.getDataFromElasticsearch(search, formattedDate);
+    				if(goodsList.size() > 0) {
+    					// 핸드폰으로 전송
+    					slackService.call(1, "GoodsList is over 0 : " + goodsList.get(0).toString());
+    				}
+    			}
+    		}
     		
     		tte.shutdown();
     	}

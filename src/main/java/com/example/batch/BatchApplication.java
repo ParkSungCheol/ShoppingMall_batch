@@ -31,8 +31,10 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.batch.Domain.BatchSchedule;
+import com.example.batch.Domain.JobStatus;
 import com.example.batch.Service.BatchScheduleService;
 import com.example.batch.Service.GoodsService;
+import com.example.batch.Service.JobStatusService;
 import com.example.batch.job.SimpleJobConfiguration;
 
 @SpringBootApplication
@@ -46,6 +48,8 @@ public class BatchApplication implements CommandLineRunner {
     private TaskExecutor taskExecutor;
 	@Autowired
 	private GoodsService goodsService;
+	@Autowired
+	private JobStatusService jobStatusService;
 	@Autowired
 	private RestHighLevelClient client;
 	private static final String INDEX_NAME = "goods";
@@ -86,6 +90,10 @@ public class BatchApplication implements CommandLineRunner {
 		
 		int numThreads = Math.min(MAX_THREADS, batchSchedules.size());
 
+		JobStatus jobStatus = new JobStatus();
+		jobStatus.setBatchId(Integer.parseInt(account));
+		jobStatusService.startJobStatus(jobStatus);
+		
         for (int i = 0; i < numThreads; i++) {
         	List<BatchSchedule> subList = new ArrayList<BatchSchedule>();
         	for(int j = i; j < batchSchedules.size(); j += MAX_THREADS) {
