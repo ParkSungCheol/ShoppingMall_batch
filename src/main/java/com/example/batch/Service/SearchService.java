@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.batch.Domain.Search;
+import com.example.batch.Mapper.SearchMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -14,9 +15,9 @@ import lombok.RequiredArgsConstructor;
 public class SearchService {
 
 	@Autowired
-    private SearchService searchService;
+    private SearchMapper searchMapper;
 
     public List<Search> selectSearch() {
-        return searchService.selectSearch();
+        return searchMapper.selectSearch();
     }
 }
