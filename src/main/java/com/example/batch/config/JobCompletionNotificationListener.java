@@ -25,6 +25,7 @@ import com.example.batch.Domain.esGoods;
 import com.example.batch.Service.BatchScheduleService;
 import com.example.batch.Service.ElasticsearchService;
 import com.example.batch.Service.JobStatusService;
+import com.example.batch.Service.PhoneService;
 import com.example.batch.Service.SearchService;
 import com.example.batch.Service.SlackService;
 
@@ -43,8 +44,9 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 	private JobStatusService jobStatusService;
 	private SearchService searchService;
 	private ElasticsearchService elasticsearchService;
+	private PhoneService phoneService;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService) {
+    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, WebDriverManager webDriverManager, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
@@ -52,6 +54,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
         this.jobStatusService = jobStatusService;
         this.searchService = searchService;
         this.elasticsearchService = elasticsearchService;
+        this.phoneService = phoneService;
     }
 
     @Override
@@ -118,24 +121,6 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 		
     	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	if(jobCount == 0) {
-    		webDriverManager.quitAllDrivers();
-    		log.info("#### ALL driver END ####");
-    		
-    		List<Connection> connections = dataSource.getAllConnections();
-    		for(Connection connection : connections) {
-    			try {
-                    connection.close();
-                    log.info("db connection closed");
-                } catch (SQLException i) {
-                    i.printStackTrace();
-                }
-    		}
-    		
-    		String finalMsg = "All Job Complete\n";
-    		finalMsg += "Failed : " + failedCount + "\n";
-    		finalMsg += "Successed : " + successedCount;
-    		slackService.call(1, finalMsg);
-    		
     		JobStatus jobStatus = new JobStatus();
     		jobStatus.setBatchId(Integer.parseInt(account));
     		jobStatusService.endJobStatus(jobStatus);
@@ -156,10 +141,34 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     				List<esGoods> goodsList = elasticsearchService.getDataFromElasticsearch(search, formattedDate);
     				if(goodsList.size() > 0) {
     					// 핸드폰으로 전송
-    					slackService.call(1, "GoodsList is over 0 : " + goodsList.get(0).toString());
+    					try {
+    					String phoneMsg = "GoodsList is over 0 : " + goodsList.get(0).toString();
+    					phoneService.sendMessage(search.getPhone(), phoneMsg);
+    					} catch(Exception e) {
+    						log.info("########## phoneMsg error Occurred!!! ######");
+    						log.info(e.getMessage());
+    					}
     				}
     			}
     		}
+    		
+    		webDriverManager.quitAllDrivers();
+    		log.info("#### ALL driver END ####");
+    		
+    		List<Connection> connections = dataSource.getAllConnections();
+    		for(Connection connection : connections) {
+    			try {
+                    connection.close();
+                    log.info("db connection closed");
+                } catch (SQLException i) {
+                    i.printStackTrace();
+                }
+    		}
+    		
+    		String finalMsg = "All Job Complete\n";
+    		finalMsg += "Failed : " + failedCount + "\n";
+    		finalMsg += "Successed : " + successedCount;
+    		slackService.call(1, finalMsg);
     		
     		tte.shutdown();
     	}
