@@ -142,7 +142,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     				if(goodsList.size() > 0) {
     					// 핸드폰으로 전송
     					try {
-    					String phoneMsg = search.getSearchValue() + " " + goodsList.size() + "건[" + goodsList.get(0).getDetail() + "]";
+    					String phoneMsg = search.getSearchValue() + " : 최저가 " + goodsList.get(0).getPrice() + "원 입니다.";
     					phoneService.sendMessage(search.getPhone(), phoneMsg);
     					} catch(Exception e) {
     						log.info("########## phoneMsg error Occurred!!! ######");
