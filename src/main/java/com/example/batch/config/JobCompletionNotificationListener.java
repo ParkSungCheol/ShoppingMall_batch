@@ -127,6 +127,12 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		
     		List<JobStatus> jobStatusList = jobStatusService.selectPJobStatus();
     		if(jobStatusList.size() == 0) {
+    			try {
+					Thread.currentThread().sleep(600000);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
     			// 가격 설정값보다 낮은지 검증 후 핸드폰으로 전송
     			List<Search> searchList = searchService.selectSearch();
     			// 시간대를 Asia/Seoul로 설정

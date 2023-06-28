@@ -135,7 +135,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                        		threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
 	                        		continue;
 	                        	}
-	                        	Thread.currentThread().sleep(100);
+	                        	Thread.currentThread().sleep(250);
 		                        if(Thread.currentThread().getName().contains(threadNumber) ) {													
 		                        	doc = Jsoup.connect(product.getDetailPageUrl()).header("User-Agent", userAgent).get();
 		                        	threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
@@ -196,7 +196,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 								boolean isExist = false;
 								while(st.hasMoreTokens()) {
 									String token = st.nextToken();
-									if(token.contains("무료") || token.contains("SMS")) {
+									if(token.contains("무료") || token.contains("SMS") || token.contains("없음")) {
 										deliveryFee = 0;
 										isExist = true;
 										break;
