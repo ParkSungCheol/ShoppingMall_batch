@@ -19,7 +19,16 @@ public class ElasticsearchConfig {
 	
 	@Value("${elasticsearch.port}")
     private String port;
-	
+
+    @Bean
+    public ElasticsearchOperations elasticsearchOperations() {
+        ClientConfiguration clientConfiguration = ClientConfiguration.builder()
+                .connectedTo(url + ":" + port)
+                .build();
+
+        return new ElasticsearchRestTemplate(RestClients.create(clientConfiguration).rest());
+    }
+    
     @Bean
     public RestHighLevelClient client() {
     	return new RestHighLevelClient(
