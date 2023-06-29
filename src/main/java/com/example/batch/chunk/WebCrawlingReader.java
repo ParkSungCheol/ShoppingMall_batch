@@ -92,7 +92,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 // API 응답 데이터 읽기
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "EUC-KR"));
                 String line;
                 StringBuilder response = new StringBuilder();
                 while ((line = in.readLine()) != null) {
@@ -148,17 +148,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                        goods.setImage(product.getProductImage300());
 	                    	goods.setDetail(product.getDetailPageUrl());
 	                    	
-							elems = doc.select(batchSchedule.get().getTitleSelector1());
-							
-							if(elems.size() == 1) {
-								String title = elems.get(0).text();
-								if(!title.equals("")) {
-									log.get().info("title : {}", title);
-									goods.setName(title);
-								}
-								else isOk = false;
+	                    	log.get().info("title : {}", product.getProductName());
+							goods.setName(product.getProductName());
+							if(product.getProductName() == null || product.getProductName().equals("")) {
+								isOk = false;
 							}
-							else isOk = false;
 							
 							//렌탈인지 검증
 							elems = doc.select(batchSchedule.get().getTitleSelector2());
@@ -170,17 +164,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 								}
 							}
 								
-							elems = doc.select(batchSchedule.get().getPriceSelector1());
-							
-							if(elems.size() >= 1) {
-								String price = elems.get(0).text().replaceAll("[^0-9]", "");
-								if(!price.equals("")) {
-									log.get().info("price : {}", price);
-									goods.setPrice(Integer.parseInt(price));
-								}
-								else isOk = false;
+							log.get().info("price : {}", product.getSalePrice());
+							goods.setPrice(product.getSalePrice());
+							if((Integer)product.getSalePrice() == null || product.getSalePrice() == 0) {
+								isOk = false;
 							}
-							else isOk = false;
 							
 							// delivery 1
 							elems = doc.select(batchSchedule.get().getDeliveryFeeSelector1());
@@ -218,17 +206,11 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 							}
 							else isOk = false;
 							
-							elems = doc.select(batchSchedule.get().getSellerSelector1());
-							
-							if(elems.size() == 1) {
-								String seller = elems.get(0).text();
-								if(!seller.equals("")) {
-									goods.setSellid(seller);
-									log.get().info("seller : {}", seller);
-								}
-								else isOk = false;
+							goods.setSellid(product.getSellerNick());
+							log.get().info("seller : {}", product.getSellerNick());
+							if(product.getSellerNick() == null || product.getSellerNick().equals("")) {
+								isOk = false;
 							}
-							else isOk = false;
 							
 							if(isOk) {
 								goodsList.add(goods);
