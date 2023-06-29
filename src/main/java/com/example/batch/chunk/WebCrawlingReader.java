@@ -135,7 +135,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                        		threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
 	                        		continue;
 	                        	}
-	                        	Thread.currentThread().sleep(200);
+	                        	Thread.currentThread().sleep(225);
 		                        if(Thread.currentThread().getName().contains(threadNumber) ) {													
 		                        	doc = Jsoup.connect(product.getDetailPageUrl()).header("User-Agent", userAgent).get();
 		                        	threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
