@@ -186,8 +186,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 											break;
 										}
 										if(token.contains("원")) {
-											StringTokenizer st_1 = new StringTokenizer(token, "원");
-											if(st_1.countTokens() == 1) deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
+											if(!delivery.contains("/")) deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
 											isExist = true;
 											break;
 										}
