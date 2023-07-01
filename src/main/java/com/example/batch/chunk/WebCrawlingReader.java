@@ -115,6 +115,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     total += productList.size();
                     
                     for (Product product : productList) {
+                    	Thread.currentThread().sleep(1000);
                     	Goods goods = new Goods();
                     	Count.set(0);
     					while(true) {
