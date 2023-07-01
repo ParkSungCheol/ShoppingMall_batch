@@ -33,6 +33,17 @@ public class Product {
     private int buySatisfy;
     private String minorYn;
     private Benefit benefit;
+    private String basicImage;
+    private String addImage1;
+    private String addImage2;
+    private String addImage3;
+    private String imageL300;
+    private String point;
+    private String chip;
+    private String installment;
+    private String shipFee;
+    private String sellSatisfaction;
+    private String sellGrade;
 
     public String getProductCode() {
         return productCode;
@@ -285,4 +296,103 @@ public class Product {
     public void setBenefit(Benefit benefit) {
         this.benefit = benefit;
     }
+
+	public String getBasicImage() {
+		return basicImage;
+	}
+
+	@XmlElement(name = "BasicImage")
+	public void setBasicImage(String basicImage) {
+		this.basicImage = basicImage;
+	}
+
+	public String getAddImage1() {
+		return addImage1;
+	}
+
+	@XmlElement(name = "AddImage1")
+	public void setAddImage1(String addImage1) {
+		this.addImage1 = addImage1;
+	}
+
+	public String getAddImage2() {
+		return addImage2;
+	}
+
+	@XmlElement(name = "AddImage2")
+	public void setAddImage2(String addImage2) {
+		this.addImage2 = addImage2;
+	}
+
+	public String getAddImage3() {
+		return addImage3;
+	}
+
+	@XmlElement(name = "AddImage3")
+	public void setAddImage3(String addImage3) {
+		this.addImage3 = addImage3;
+	}
+
+	public String getImageL300() {
+		return imageL300;
+	}
+
+	@XmlElement(name = "ImageL300")
+	public void setImageL300(String imageL300) {
+		this.imageL300 = imageL300;
+	}
+
+	public String getPoint() {
+		return point;
+	}
+
+	@XmlElement(name = "Point")
+	public void setPoint(String point) {
+		this.point = point;
+	}
+
+	public String getChip() {
+		return chip;
+	}
+
+	@XmlElement(name = "Chip")
+	public void setChip(String chip) {
+		this.chip = chip;
+	}
+
+	public String getInstallment() {
+		return installment;
+	}
+
+	@XmlElement(name = "Installment")
+	public void setInstallment(String installment) {
+		this.installment = installment;
+	}
+
+	public String getShipFee() {
+		return shipFee;
+	}
+
+	@XmlElement(name = "ShipFee")
+	public void setShipFee(String shipFee) {
+		this.shipFee = shipFee;
+	}
+
+	public String getSellSatisfaction() {
+		return sellSatisfaction;
+	}
+
+	@XmlElement(name = "SellSatisfaction")
+	public void setSellSatisfaction(String sellSatisfaction) {
+		this.sellSatisfaction = sellSatisfaction;
+	}
+
+	public String getSellGrade() {
+		return sellGrade;
+	}
+
+	@XmlElement(name = "SellGrade")
+	public void setSellGrade(String sellGrade) {
+		this.sellGrade = sellGrade;
+	}
 }

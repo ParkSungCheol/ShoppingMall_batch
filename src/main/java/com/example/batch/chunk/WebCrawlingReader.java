@@ -12,10 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ExitStatus;
@@ -29,14 +25,13 @@ import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
 import com.example.batch.Domain.Product;
+import com.example.batch.Domain.ProductInfoResponse;
 import com.example.batch.Domain.ProductSearchResponse;
 import com.example.batch.Domain.Products;
 import com.example.batch.Domain.Request;
-
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
@@ -53,10 +48,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
-    private static final ThreadLocal<Integer> Count = new ThreadLocal<>();
     private static String account;
     private static Set<String> set = new HashSet<String>();
-    private static String threadNumber = "1";
     
 	@Value("${11st.api-url}")
     private String API_URL;
@@ -115,119 +108,113 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     log.get().info("Total Count: " + products.getTotalCount());
 
                     List<Product> productList = products.getProductList();
-                    Document doc;
                     
                     if(productList == null) return null;
                     
                     total += productList.size();
-                    String userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
                     
                     for (Product product : productList) {
                     	Goods goods = new Goods();
-    					Elements elems;
-    					Count.set(0);
     					
     					while(true) {
 							Boolean isOk = true;
 							
-	                        while (true) {
-	                        	if(!set.contains(threadNumber)) {
-	                        		threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
-	                        		continue;
-	                        	}
-	                        	Thread.currentThread().sleep(250);
-		                        if(Thread.currentThread().getName().contains(threadNumber) ) {													
-		                        	doc = Jsoup.connect(product.getDetailPageUrl()).header("User-Agent", userAgent).get();
-		                        	threadNumber = Integer.parseInt(threadNumber) + 1 > 4? "1" : String.valueOf(Integer.parseInt(threadNumber) + 1);
-		                        	break;
-		                        }
-	                        }
-							
-	                        log.get().info("image: " + product.getProductImage300());
-	                        log.get().info("detail: " + product.getDetailPageUrl());
-	                        goods.setImage(product.getProductImage300());
-	                    	goods.setDetail(product.getDetailPageUrl());
-	                    	
-	                    	log.get().info("title : {}", product.getProductName());
-							goods.setName(product.getProductName());
-							if(product.getProductName() == null || product.getProductName().equals("")) {
-								isOk = false;
-							}
-							
-							//렌탈인지 검증
-							elems = doc.select(batchSchedule.get().getTitleSelector2());
-							if(elems.size() == 1) {
-								String isRental = elems.get(0).text();
-								if(isRental.equals("렌탈")) {
-									log.get().info("해당 상품은 렌탈상품입니다.");
-									break;
-								}
-							}
-								
-							log.get().info("price : {}", product.getSalePrice());
-							goods.setPrice(product.getSalePrice());
-							if((Integer)product.getSalePrice() == null || product.getSalePrice() == 0) {
-								isOk = false;
-							}
-							
-							// delivery 1
-							elems = doc.select(batchSchedule.get().getDeliveryFeeSelector1());
-							if(elems.size() == 0) elems = doc.select(batchSchedule.get().getDeliveryFeeSelector2());
-							if(elems.size() == 0) elems = doc.select(batchSchedule.get().getDeliveryFeeSelector3());
-							if(elems.size() == 0) elems = doc.select(batchSchedule.get().getDeliveryFeeSelector4());
-							
-							if(elems.size() == 1) {
-								Integer deliveryFee = null;
-								String delivery = elems.get(0).text();
-								log.get().info("delivery Check : {}", delivery);
-								StringTokenizer st = new StringTokenizer(delivery, " ");
-								boolean isExist = false;
-								while(st.hasMoreTokens()) {
-									String token = st.nextToken();
-									if(token.contains("무료") || token.contains("SMS") || token.contains("없음")) {
-										deliveryFee = 0;
+							// API 요청 URL 생성
+				            apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductInfo" + "&productCode=" + product.getProductCode();
+
+				            // API 요청을 위한 HttpURLConnection 객체 생성
+				            url = new URL(apiUrl);
+				            connection = (HttpURLConnection) url.openConnection();
+				            connection.setRequestMethod("GET");
+				            
+//				            log.get().info("apiUrl : {}", apiUrl);
+
+				            // API 응답 확인
+				            responseCode = connection.getResponseCode();
+				            if (responseCode == HttpURLConnection.HTTP_OK) {
+				                // API 응답 데이터 읽기
+				                in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "EUC-KR"));
+				                response = new StringBuilder();
+				                while ((line = in.readLine()) != null) {
+				                    response.append(line);
+				                }
+				                in.close();
+				                
+				                try {
+				                	responseXml = response.toString();
+				                	
+				                    jaxbContext = JAXBContext.newInstance(ProductInfoResponse.class);
+				                    unmarshaller = jaxbContext.createUnmarshaller();
+				                    ProductInfoResponse responseString2 = (ProductInfoResponse) unmarshaller.unmarshal(new StringReader(responseXml));
+				                    Product product2 = responseString2.getProduct();
+				                    
+			                        log.get().info("image: " + product.getProductImage300());
+			                        log.get().info("detail: " + product.getDetailPageUrl());
+			                        goods.setImage(product.getProductImage300());
+			                    	goods.setDetail(product.getDetailPageUrl());
+			                    	
+			                    	log.get().info("title : {}", product.getProductName());
+									goods.setName(product.getProductName());
+									if(product.getProductName() == null || product.getProductName().equals("")) {
+										isOk = false;
+									}
+									
+									//렌탈인지 검증
+//									if(!(product2.getInstallment() == null) || !product2.getInstallment().equals("")) {
+//										log.get().info("해당 상품은 렌탈상품입니다.");
+//										break;									
+//									}
+										
+									log.get().info("price : {}", product.getSalePrice());
+									goods.setPrice(product.getSalePrice());
+									if((Integer)product.getSalePrice() == null || product.getSalePrice() == 0) {
+										isOk = false;
+									}
+									
+									// delivery 1
+									Integer deliveryFee = null;
+									String delivery = product2.getShipFee();
+									log.get().info("delivery Check : {}", product2.getShipFee());
+									StringTokenizer st = new StringTokenizer(delivery, " ");
+									boolean isExist = false;
+									while(st.hasMoreTokens()) {
+										String token = st.nextToken();
+										if(token.contains("무료") || token.contains("SMS") || token.contains("없음")) {
+											deliveryFee = 0;
+											isExist = true;
+											break;
+										}
+										if(token.contains("원")) {
+											deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
+											isExist = true;
+											break;
+										}
+									}
+									if(!isExist && (delivery.contains("착불") || delivery.contains("참조"))) {
 										isExist = true;
+									}
+									if(isExist) {
+										log.get().info("deliveryFee : {}", deliveryFee);
+										goods.setDeliveryfee(deliveryFee);
+									}
+									else isOk = false;
+									
+									goods.setSellid(product.getSellerNick());
+									log.get().info("seller : {}", product.getSellerNick());
+									if(product.getSellerNick() == null || product.getSellerNick().equals("")) {
+										isOk = false;
+									}
+									
+									if(isOk) {
+										goodsList.add(goods);
+										insert++;
 										break;
 									}
-									if(token.contains("원")) {
-										deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
-										isExist = true;
-										break;
-									}
-								}
-								if(!isExist && (delivery.contains("착불") || delivery.contains("참조"))) {
-									isExist = true;
-								}
-								if(isExist) {
-									log.get().info("deliveryFee : {}", deliveryFee);
-									goods.setDeliveryfee(deliveryFee);
-								}
-								else isOk = false;
-							}
-							else isOk = false;
-							
-							goods.setSellid(product.getSellerNick());
-							log.get().info("seller : {}", product.getSellerNick());
-							if(product.getSellerNick() == null || product.getSellerNick().equals("")) {
-								isOk = false;
-							}
-							
-							if(isOk) {
-								goodsList.add(goods);
-								insert++;
-								break;
-							}
-    						
-    						Count.set(Count.get() + 1);
-                        	if(Count.get() > 3) {
-                        		if(doc.select(batchSchedule.get().getTitleSelector3()).size() == 0 || doc.select(batchSchedule.get().getPriceSelector2()).size() == 0) {
-                        			log.get().info("this is not exist dom : {}", goods.getDetail());
-                        			break;
-                        		}
-                        		else {
-                        			throw new Exception("Price select count over 3");
-                        		}
-                        	}
+
+				                } catch (JAXBException e) {
+				                    e.printStackTrace();
+				                }
+				            }
     					}
                     }
                 } catch (JAXBException e) {
