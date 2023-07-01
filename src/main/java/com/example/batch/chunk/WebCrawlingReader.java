@@ -48,6 +48,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<Integer> pageNumber = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
+    private static final ThreadLocal<Integer> Count = new ThreadLocal<>();
     private static String account;
     private static Set<String> set = new HashSet<String>();
     
@@ -115,7 +116,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     
                     for (Product product : productList) {
                     	Goods goods = new Goods();
-    					
+                    	Count.set(0);
     					while(true) {
 							Boolean isOk = true;
 							
@@ -185,8 +186,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 											break;
 										}
 										if(token.contains("원")) {
-											StringTokenizer st_1 = new StringTokenizer(token, "@");
-											deliveryFee = Integer.parseInt(st_1.nextToken().replaceAll("[^0-9]", ""));
+											StringTokenizer st_1 = new StringTokenizer(token, "원");
+											if(st_1.countTokens() == 1) deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
 											isExist = true;
 											break;
 										}
@@ -211,6 +212,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 										insert++;
 										break;
 									}
+									
+									Count.set(Count.get() + 1);
+		                        	if(Count.get() > 3) {
+		                        		throw new Exception("Price select count over 3");
+		                        	}
+
 
 				                } catch (JAXBException e) {
 				                    e.printStackTrace();
