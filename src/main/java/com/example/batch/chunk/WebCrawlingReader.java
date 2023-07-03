@@ -221,12 +221,14 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 
 				                } catch (JAXBException e) {
 				                    e.printStackTrace();
+				                    throw e;
 				                }
 				            }
     					}
                     }
                 } catch (JAXBException e) {
                     e.printStackTrace();
+                    throw e;
                 }
             } else {
                throw new Exception("API 요청에 실패했습니다. 응답 코드: " + responseCode);
