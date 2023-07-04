@@ -73,7 +73,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
             // API 요청 URL 생성
-            String apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&sortCd=N" + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
+            String apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
 
             // API 요청을 위한 HttpURLConnection 객체 생성
             URL url = new URL(apiUrl);

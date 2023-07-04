@@ -56,7 +56,8 @@ public class ElasticsearchService {
     	
     	// NativeSearchQuery를 사용하여 쿼리 실행
     	NativeSearchQueryBuilder searchQuery = new NativeSearchQueryBuilder()
-    	        .withQuery(boolQuery);
+    	        .withQuery(boolQuery)
+    	        .withMinScore(20);
     	
     	// ORDER BY 절 추가
     	searchQuery.withSort(Sort.by(Sort.Direction.ASC, "price"));
