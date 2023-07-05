@@ -18,26 +18,26 @@
 	    ) VALUES 
 	    <foreach collection="goodsList" item="Goods" separator=",">
 	    (
-	          #{Goods.name}
-	        , #{Goods.price}
+	          #{Goods.name} AS name
+	        , #{Goods.price} AS price
 	        , NULL
 	        , NULL
 	        , NULL
-	        , #{Goods.deliveryfee}
-	        , #{Goods.sellid}
-	        , #{Goods.image}
-	        , #{Goods.detail}
-	        , #{Goods.product_code}
-	        , #{Goods.insertion_date}
+	        , #{Goods.deliveryfee} AS deliveryfee
+	        , #{Goods.sellid} AS sellid
+	        , #{Goods.image} AS image
+	        , #{Goods.detail} AS detail
+	        , #{Goods.product_code} AS product_code
+	        , #{Goods.insertion_date} AS insertion_date
 	    )
 	    </foreach>
 	    ON DUPLICATE KEY UPDATE
-	    name = #{Goods.name},
-	    price = #{Goods.price},
-	    deliveryfee = #{Goods.deliveryfee},
-	    sellid = #{Goods.sellid},
-	    image = #{Goods.image},
-	    detail = #{Goods.detail}
+	    name = values(name),
+	    price = values(price),
+	    deliveryfee = values(deliveryfee),
+	    sellid = values(sellid),
+	    image = values(image),
+	    detail = values(detail)
 	</insert>
 	
 	<delete id="deleteGoodsList">
