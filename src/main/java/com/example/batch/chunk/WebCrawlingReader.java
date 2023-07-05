@@ -1,7 +1,6 @@
 package com.example.batch.chunk;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
@@ -33,7 +32,6 @@ import com.example.batch.Domain.ProductSearchResponse;
 import com.example.batch.Domain.Products;
 import com.example.batch.Domain.Request;
 import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 
 @Component
@@ -67,188 +65,185 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         int insert = 0;
         if(pageNumber.get() > 25) return null;
         
-        try {
+        String responseXml;
+        String apiUrl;
+        URL url;
+        HttpURLConnection connection;
+        int responseCode;
+        BufferedReader in;
+        String line;
+        StringBuilder response;
+        
+        while(true ) {
         	log.get().info("Current PageNumber : " + pageNumber.get());
             // 쿼리를 UTF-8로 인코딩
             String encodedQuery = URLEncoder.encode(query, "UTF-8");
 
             // API 요청 URL 생성
-            String apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
+            apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductSearch" + "&keyword=" + encodedQuery + "&pageNum=" + pageNumber.get() + "&pageSize=" + display;
 
             // API 요청을 위한 HttpURLConnection 객체 생성
-            URL url = new URL(apiUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            url = new URL(apiUrl);
+            connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             
-//            log.get().info("apiUrl : {}", apiUrl);
+//                log.get().info("apiUrl : {}", apiUrl);
 
             // API 응답 확인
-            int responseCode = connection.getResponseCode();
+            responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
                 // API 응답 데이터 읽기
-                BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "EUC-KR"));
-                String line;
-                StringBuilder response = new StringBuilder();
+                in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "EUC-KR"));
+                response = new StringBuilder();
                 while ((line = in.readLine()) != null) {
                     response.append(line);
                 }
                 in.close();
                 
-                try {
-                	String responseXml = response.toString();
-                	
-                    JAXBContext jaxbContext = JAXBContext.newInstance(ProductSearchResponse.class);
-                    Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-                    ProductSearchResponse responseString = (ProductSearchResponse) unmarshaller.unmarshal(new StringReader(responseXml));
+            	responseXml = response.toString();
+            }
+            else throw new Exception("API 요청에 실패했습니다. 응답 코드: " + responseCode);
+            if(responseXml == null || responseXml.equals("")) {
+            	pageNumber.set(pageNumber.get() + 1);
+            	continue;
+            }
+            else break;
+    	}
+        JAXBContext jaxbContext = JAXBContext.newInstance(ProductSearchResponse.class);
+        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        ProductSearchResponse responseString = (ProductSearchResponse) unmarshaller.unmarshal(new StringReader(responseXml));
 
-                    // 접근 및 사용 예시
-                    Request request = responseString.getRequest();
-                    log.get().info("Processing Time: " + request.getProcessingTime());
+        // 접근 및 사용 예시
+        Request request = responseString.getRequest();
+        log.get().info("Processing Time: " + request.getProcessingTime());
 
-                    Products products = responseString.getProducts();
-                    log.get().info("Total Count: " + products.getTotalCount());
+        Products products = responseString.getProducts();
+        log.get().info("Total Count: " + products.getTotalCount());
 
-                    List<Product> productList = products.getProductList();
-                    
-                    if(productList == null) return null;
-                    
-                    total += productList.size();
-                    
-                    for (Product product : productList) {
-                    	Thread.currentThread().sleep(1000);
-                    	Goods goods = new Goods();
-                    	Count.set(0);
-    					while(true) {
-							Boolean isOk = true;
-							
-							// API 요청 URL 생성
-				            apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductInfo" + "&productCode=" + product.getProductCode();
+        List<Product> productList = products.getProductList();
+        
+        if(productList == null) return null;
+        
+        total += productList.size();
+        
+        for (Product product : productList) {
+        	Thread.currentThread().sleep(1000);
+        	Goods goods = new Goods();
+        	Count.set(0);
+			while(true) {
+				Boolean isOk = true;
+				
+				// API 요청 URL 생성
+	            apiUrl = API_URL + "?key=" + API_KEY + "&apiCode=ProductInfo" + "&productCode=" + product.getProductCode();
 
-				            // API 요청을 위한 HttpURLConnection 객체 생성
-				            url = new URL(apiUrl);
-				            connection = (HttpURLConnection) url.openConnection();
-				            connection.setRequestMethod("GET");
-				            
+	            // API 요청을 위한 HttpURLConnection 객체 생성
+	            url = new URL(apiUrl);
+	            connection = (HttpURLConnection) url.openConnection();
+	            connection.setRequestMethod("GET");
+	            
 //				            log.get().info("apiUrl : {}", apiUrl);
 
-				            // API 응답 확인
-				            responseCode = connection.getResponseCode();
-				            if (responseCode == HttpURLConnection.HTTP_OK) {
-				                // API 응답 데이터 읽기
-				                in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "EUC-KR"));
-				                response = new StringBuilder();
-				                while ((line = in.readLine()) != null) {
-				                    response.append(line);
-				                }
-				                in.close();
-				                
-				                try {
-				                	responseXml = response.toString();
-				                	
-				                    jaxbContext = JAXBContext.newInstance(ProductInfoResponse.class);
-				                    unmarshaller = jaxbContext.createUnmarshaller();
-				                    ProductInfoResponse responseString2 = (ProductInfoResponse) unmarshaller.unmarshal(new StringReader(responseXml));
-				                    Product product2 = responseString2.getProduct();
-				                    
-			                        log.get().info("image: " + product.getProductImage300());
-			                        log.get().info("detail: " + product.getDetailPageUrl());
-			                        goods.setImage(product.getProductImage300());
-			                    	goods.setDetail(product.getDetailPageUrl());
-			                    	
-			                    	log.get().info("title : {}", product.getProductName());
-									goods.setName(product.getProductName());
-									if(product.getProductName() == null || product.getProductName().equals("")) {
-										isOk = false;
-									}
-									
-									//렌탈인지 검증
-//									if(!(product2.getInstallment() == null) || !product2.getInstallment().equals("")) {
-//										log.get().info("해당 상품은 렌탈상품입니다.");
-//										break;									
-//									}
-										
-									log.get().info("price : {}", product.getSalePrice());
-									goods.setPrice(product.getSalePrice());
-									if((Integer)product.getSalePrice() == null || product.getSalePrice() == 0) {
-										isOk = false;
-									}
-									
-									// delivery 1
-									Integer deliveryFee = null;
-									String delivery = product2.getShipFee();
-									log.get().info("delivery Check : {}", product2.getShipFee());
-									StringTokenizer st = new StringTokenizer(delivery, " ");
-									boolean isExist = false;
-									while(st.hasMoreTokens()) {
-										String token = st.nextToken();
-										if(token.contains("무료") || token.contains("SMS") || token.contains("없음")) {
-											deliveryFee = 0;
-											isExist = true;
-											break;
-										}
-										if(token.contains("원")) {
-											if(!delivery.contains("/")) deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
-											isExist = true;
-											break;
-										}
-									}
-									if(!isExist && (delivery.contains("착불") || delivery.contains("참조"))) {
-										isExist = true;
-									}
-									if(isExist) {
-										log.get().info("deliveryFee : {}", deliveryFee);
-										goods.setDeliveryfee(deliveryFee);
-									}
-									else isOk = false;
-									
-									goods.setSellid(product.getSellerNick());
-									log.get().info("seller : {}", product.getSellerNick());
-									if(product.getSellerNick() == null || product.getSellerNick().equals("")) {
-										isOk = false;
-									}
-									
-									if(isOk) {
-										goodsList.add(goods);
-										insert++;
-										break;
-									}
-									
-									Count.set(Count.get() + 1);
-		                        	if(Count.get() > 3) {
-		                        		throw new Exception("Price select count over 3");
-		                        	}
-
-
-				                } catch (JAXBException e) {
-				                    e.printStackTrace();
-				                    throw e;
-				                }
-				            }
-    					}
-                    }
-                } catch (JAXBException e) {
-                    e.printStackTrace();
-                    throw e;
-                }
-            } else {
-               throw new Exception("API 요청에 실패했습니다. 응답 코드: " + responseCode);
-            }
-
-            // 연결 해제
-            connection.disconnect();
-            
-            log.get().info("target : " + total + ", inserted : " + insert);
-            totalSize.set(totalSize.get() + total);
-            insertSize.set(insertSize.get() + insert);
-            pageNumber.set(pageNumber.get() + 1);
-            log.get().info("#### crawling END ####");
-            
-            if(goodsList.size() == 0) return null;
-            return goodsList;
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw e;
+	            // API 응답 확인
+	            responseCode = connection.getResponseCode();
+	            if (responseCode == HttpURLConnection.HTTP_OK) {
+	                // API 응답 데이터 읽기
+	                in = new BufferedReader(new InputStreamReader(connection.getInputStream(), "EUC-KR"));
+	                response = new StringBuilder();
+	                while ((line = in.readLine()) != null) {
+	                    response.append(line);
+	                }
+	                in.close();
+	                
+                	responseXml = response.toString();
+                	if(responseXml == null || responseXml.equals("")) break;
+                	
+                    jaxbContext = JAXBContext.newInstance(ProductInfoResponse.class);
+                    unmarshaller = jaxbContext.createUnmarshaller();
+                    ProductInfoResponse responseString2 = (ProductInfoResponse) unmarshaller.unmarshal(new StringReader(responseXml));
+                    Product product2 = responseString2.getProduct();
+                    
+                    log.get().info("image: " + product.getProductImage300());
+                    log.get().info("detail: " + product.getDetailPageUrl());
+                    goods.setImage(product.getProductImage300());
+                	goods.setDetail(product.getDetailPageUrl());
+                	
+                	log.get().info("title : {}", product.getProductName());
+					goods.setName(product.getProductName());
+					if(product.getProductName() == null || product.getProductName().equals("")) {
+						isOk = false;
+					}
+					
+					//렌탈인지 검증
+//					if(!(product2.getInstallment() == null) || !product2.getInstallment().equals("")) {
+//						log.get().info("해당 상품은 렌탈상품입니다.");
+//						break;									
+//					}
+						
+					log.get().info("price : {}", product.getSalePrice());
+					goods.setPrice(product.getSalePrice());
+					if((Integer)product.getSalePrice() == null || product.getSalePrice() == 0) {
+						isOk = false;
+					}
+					
+					// delivery 1
+					Integer deliveryFee = null;
+					String delivery = product2.getShipFee();
+					log.get().info("delivery Check : {}", product2.getShipFee());
+					StringTokenizer st = new StringTokenizer(delivery, " ");
+					boolean isExist = false;
+					while(st.hasMoreTokens()) {
+						String token = st.nextToken();
+						if(token.contains("무료") || token.contains("SMS") || token.contains("없음")) {
+							deliveryFee = 0;
+							isExist = true;
+							break;
+						}
+						if(token.contains("원")) {
+							if(!delivery.contains("/")) deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
+							isExist = true;
+							break;
+						}
+					}
+					if(!isExist && (delivery.contains("착불") || delivery.contains("참조"))) {
+						isExist = true;
+					}
+					if(isExist) {
+						log.get().info("deliveryFee : {}", deliveryFee);
+						goods.setDeliveryfee(deliveryFee);
+					}
+					else isOk = false;
+					
+					goods.setSellid(product.getSellerNick());
+					log.get().info("seller : {}", product.getSellerNick());
+					if(product.getSellerNick() == null || product.getSellerNick().equals("")) {
+						isOk = false;
+					}
+					
+					if(isOk) {
+						goodsList.add(goods);
+						insert++;
+						break;
+					}
+					
+					Count.set(Count.get() + 1);
+                	if(Count.get() > 3) {
+                		throw new Exception("Price select count over 3");
+                	}
+	            }
+			}
         }
+
+        // 연결 해제
+        connection.disconnect();
+        
+        log.get().info("target : " + total + ", inserted : " + insert);
+        totalSize.set(totalSize.get() + total);
+        insertSize.set(insertSize.get() + insert);
+        pageNumber.set(pageNumber.get() + 1);
+        log.get().info("#### crawling END ####");
+        
+        if(goodsList.size() == 0) return null;
+        return goodsList;
 	}
 
 	@Override
