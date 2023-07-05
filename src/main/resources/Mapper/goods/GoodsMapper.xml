@@ -13,6 +13,8 @@
 			, sellid
 			, image
 			, detail
+			, product_code
+			, insertion_date
 	    ) VALUES 
 	    <foreach collection="goodsList" item="Goods" separator=",">
 	    (
@@ -25,8 +27,17 @@
 	        , #{Goods.sellid}
 	        , #{Goods.image}
 	        , #{Goods.detail}
+	        , #{Goods.product_code}
+	        , #{Goods.insertion_date}
 	    )
 	    </foreach>
+	    ON DUPLICATE KEY UPDATE
+	    name = #{Goods.name},
+	    price = #{Goods.price},
+	    deliveryfee = #{Goods.deliveryfee},
+	    sellid = #{Goods.sellid},
+	    image = #{Goods.image},
+	    detail = #{Goods.detail}
 	</insert>
 	
 	<delete id="deleteGoodsList">

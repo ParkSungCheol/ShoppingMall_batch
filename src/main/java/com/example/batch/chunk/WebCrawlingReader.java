@@ -6,11 +6,15 @@ import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ExitStatus;
@@ -166,6 +170,16 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                     log.get().info("detail: " + product.getDetailPageUrl());
                     goods.setImage(product.getProductImage300());
                 	goods.setDetail(product.getDetailPageUrl());
+                	goods.setProduct_code(product.getProductCode());
+                	
+                	// 시간대를 Asia/Seoul로 설정
+        	        TimeZone seoulTimeZone = TimeZone.getTimeZone("Asia/Seoul");
+        	        TimeZone.setDefault(seoulTimeZone);
+        	        // 현재 날짜를 YYYY-MM-DD 형식으로 가져오기
+        	        LocalDate currentDate = LocalDate.now();
+        	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        	        String formattedDate = currentDate.format(formatter);
+        	        goods.setInsertion_date(formattedDate);
                 	
                 	log.get().info("title : {}", product.getProductName());
 					goods.setName(product.getProductName());

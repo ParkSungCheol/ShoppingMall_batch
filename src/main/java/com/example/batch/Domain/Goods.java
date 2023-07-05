@@ -30,6 +30,10 @@ public class Goods {
 	private Timestamp modification_time;
 	@JsonProperty
 	private Timestamp insertion_time;
+	@JsonProperty
+	private String product_code;
+	@JsonProperty
+	private String insertion_date;
 	public int getId() {
 		return id;
 	}
@@ -101,6 +105,18 @@ public class Goods {
 	}
 	public void setInsertion_time(Timestamp insertion_time) {
 		this.insertion_time = insertion_time;
+	}
+	public String getProduct_code() {
+		return product_code;
+	}
+	public void setProduct_code(String product_code) {
+		this.product_code = product_code;
+	}
+	public String getInsertion_date() {
+		return insertion_date;
+	}
+	public void setInsertion_date(String insertion_date) {
+		this.insertion_date = insertion_date;
 	}
 	@Override
 	public String toString() {
