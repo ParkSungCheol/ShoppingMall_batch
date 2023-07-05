@@ -18,17 +18,17 @@
 	    ) VALUES 
 	    <foreach collection="goodsList" item="Goods" separator=",">
 	    (
-	          #{Goods.name} AS name
-	        , #{Goods.price} AS price
+	          #{Goods.name}
+	        , #{Goods.price}
 	        , NULL
 	        , NULL
 	        , NULL
-	        , #{Goods.deliveryfee} AS deliveryfee
-	        , #{Goods.sellid} AS sellid
-	        , #{Goods.image} AS image
-	        , #{Goods.detail} AS detail
-	        , #{Goods.product_code} AS product_code
-	        , #{Goods.insertion_date} AS insertion_date
+	        , #{Goods.deliveryfee}
+	        , #{Goods.sellid}
+	        , #{Goods.image}
+	        , #{Goods.detail}
+	        , #{Goods.product_code}
+	        , #{Goods.insertion_date}
 	    )
 	    </foreach>
 	    ON DUPLICATE KEY UPDATE
