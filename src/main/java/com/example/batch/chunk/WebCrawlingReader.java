@@ -79,6 +79,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         StringBuilder response;
         
         while(true ) {
+        	Thread.currentThread().sleep(1000);
         	log.get().info("Current PageNumber : " + pageNumber.get());
             // 쿼리를 UTF-8로 인코딩
             String encodedQuery = URLEncoder.encode(query, "UTF-8");
@@ -109,10 +110,14 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             else throw new Exception("API 요청에 실패했습니다. 응답 코드: " + responseCode);
             if(responseXml == null || responseXml.equals("")) {
             	pageNumber.set(pageNumber.get() + 1);
+            	if(pageNumber.get() > 25) break;
             	continue;
             }
             else break;
     	}
+        
+        if(pageNumber.get() > 25) return null;
+        
         JAXBContext jaxbContext = JAXBContext.newInstance(ProductSearchResponse.class);
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
         ProductSearchResponse responseString = (ProductSearchResponse) unmarshaller.unmarshal(new StringReader(responseXml));
@@ -160,6 +165,10 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                
                 	responseXml = response.toString();
                 	if(responseXml == null || responseXml.equals("")) break;
+                	if(responseXml.contains("ErrorResponse")) {
+                		log.get().info("ErrorResponse is occured");
+                		break;
+                	}
                 	
                     jaxbContext = JAXBContext.newInstance(ProductInfoResponse.class);
                     unmarshaller = jaxbContext.createUnmarshaller();
