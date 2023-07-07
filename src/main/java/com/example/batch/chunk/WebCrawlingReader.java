@@ -79,7 +79,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         StringBuilder response;
         
         while(true ) {
-        	Thread.currentThread().sleep(1000);
+        	Thread.currentThread().sleep(500);
         	log.get().info("Current PageNumber : " + pageNumber.get());
             // 쿼리를 UTF-8로 인코딩
             String encodedQuery = URLEncoder.encode(query, "UTF-8");
@@ -136,7 +136,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         total += productList.size();
         
         for (Product product : productList) {
-        	Thread.currentThread().sleep(1000);
+        	Thread.currentThread().sleep(500);
         	Goods goods = new Goods();
         	Count.set(0);
 			while(true) {
