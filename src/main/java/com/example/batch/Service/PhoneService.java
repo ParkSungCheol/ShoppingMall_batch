@@ -57,7 +57,6 @@ public class PhoneService {
         bodyJson.put("messages", toArr);
 
         String body = bodyJson.toString();
-        System.out.println(body);
 
         try {
             URL url = new URL(apiUrl);
@@ -80,7 +79,6 @@ public class PhoneService {
 
             int responseCode = con.getResponseCode();
             BufferedReader br;
-            System.out.println("responseCode" + " " + responseCode);
             if(responseCode == 202) {
                 //정상호출
                 br = new BufferedReader(new InputStreamReader(con.getInputStream()));
@@ -96,10 +94,9 @@ public class PhoneService {
                 response.append(inputLine);
             }
             br.close();
-            System.out.println(response.toString());
         }
         catch (Exception e) {
-            System.out.println(e);
+            e.printStackTrace();
             throw e;
         }
     }
