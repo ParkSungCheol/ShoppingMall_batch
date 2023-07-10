@@ -1,8 +1,8 @@
 package com.example.batch.Domain;
 
 import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
 
+// XML정보를 매핑할 CLASS
 public class Benefit {
     private int discount;
     private int mileage;

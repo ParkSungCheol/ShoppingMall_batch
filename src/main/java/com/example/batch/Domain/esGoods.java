@@ -1,12 +1,13 @@
 package com.example.batch.Domain;
 
+import java.time.LocalDateTime;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.LocalDateTime;
 
+// ElasticSearch indexName
 @Document(indexName = "goods")
 public class esGoods {
     private String name;

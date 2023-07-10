@@ -1,7 +1,9 @@
 package com.example.batch.Domain;
 
 import java.sql.Timestamp;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Data;
 
 @Data

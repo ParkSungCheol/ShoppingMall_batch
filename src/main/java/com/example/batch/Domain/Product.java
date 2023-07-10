@@ -4,6 +4,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "Product")
+// XML정보를 매핑할 CLASS
 public class Product {
     private String productCode;
     private String productName;

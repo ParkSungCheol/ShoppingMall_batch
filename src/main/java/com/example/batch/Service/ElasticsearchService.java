@@ -7,6 +7,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
@@ -30,14 +31,17 @@ public class ElasticsearchService {
     	// BoolQueryBuilder 생성
     	BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 
-    		// must 조건 추가
+    	// 검색어 조건 포함
 		BoolQueryBuilder mustQuery = QueryBuilders.boolQuery();
 		mustQuery.should(QueryBuilders.matchQuery("name", search.getSearchValue()));
 		mustQuery.should(QueryBuilders.matchQuery("name.nori", search.getSearchValue()));
 		mustQuery.should(QueryBuilders.matchQuery("name.ngram", search.getSearchValue()));
 		boolQuery.must(mustQuery);
 		
+    	// is_deleted 조건 포함
     	boolQuery.filter(QueryBuilders.termQuery("is_deleted", 0));
+    	
+    	// 가격 조건 포함
     	if(search.getTerm().equals("1")) {
     		boolQuery.filter(QueryBuilders.rangeQuery("price").lt(search.getPrice()));
     	}
@@ -51,15 +55,18 @@ public class ElasticsearchService {
     		boolQuery.filter(QueryBuilders.rangeQuery("price").gt(search.getPrice()));
     	}
 
-    	// insertion_time 조건 추가
+    	// insertion_time 조건 포함
     	boolQuery.filter(QueryBuilders.matchQuery("insertion_time", date));
     	
     	// NativeSearchQuery를 사용하여 쿼리 실행
     	NativeSearchQueryBuilder searchQuery = new NativeSearchQueryBuilder()
     	        .withQuery(boolQuery)
-    	        .withMinScore(20);
+    	    	// 최소 적합도 20으로 설정
+    	        .withMinScore(20)
+    	        // 페이징 처리(최소값 단건조회)
+    	        .withPageable(PageRequest.of(0, 1));
     	
-    	// ORDER BY 절 추가
+    	// ORDER BY 절 추가(0번째가 가장 최소 price)
     	searchQuery.withSort(Sort.by(Sort.Direction.ASC, "price"));
 
     	// NativeSearchQuery를 사용하여 쿼리 생성

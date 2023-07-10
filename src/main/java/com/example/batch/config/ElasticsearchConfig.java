@@ -21,6 +21,7 @@ public class ElasticsearchConfig {
     private String port;
 
     @Bean
+    // NativeSearchQuery 을 이용해 요청보낼 때 사용
     public ElasticsearchOperations elasticsearchOperations() {
         ClientConfiguration clientConfiguration = ClientConfiguration.builder()
                 .connectedTo(url + ":" + port)
@@ -30,6 +31,7 @@ public class ElasticsearchConfig {
     }
     
     @Bean
+    // SearchSourceBuilder 을 이용해 요청보낼 때 사용
     public RestHighLevelClient client() {
     	return new RestHighLevelClient(
     		    RestClient.builder(

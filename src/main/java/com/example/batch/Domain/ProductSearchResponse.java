@@ -4,10 +4,9 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlType;
 
-import java.util.List;
-
 @XmlRootElement(name = "ProductSearchResponse")
 @XmlType(propOrder = {"request", "products"})
+// XML정보를 매핑할 CLASS
 public class ProductSearchResponse {
     private Request request;
     private Products products;

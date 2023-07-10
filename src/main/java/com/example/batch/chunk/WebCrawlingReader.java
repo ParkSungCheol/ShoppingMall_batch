@@ -9,12 +9,9 @@ import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ExitStatus;
@@ -52,7 +49,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
     private static final ThreadLocal<Integer> Count = new ThreadLocal<>();
     private static String account;
-    private static Set<String> set = new HashSet<String>();
     
 	@Value("${11st.api-url}")
     private String API_URL;
@@ -63,10 +59,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
 		// TODO Auto-generated method stub
 		String query = batchSchedule.get().getTarget();
+		// chunk 당 200개의 데이터
         int display = 200;
         List<Goods> goodsList = new ArrayList<Goods>();
         int total = 0;
         int insert = 0;
+        // 검색어당 최대 25페이지(5,000건) 적재
         if(pageNumber.get() > 25) return null;
         
         String responseXml;
@@ -78,7 +76,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         String line;
         StringBuilder response;
         
-        while(true ) {
+        // 제대로 된 응답을 받을 때까지 무한루프
+        while(true) {
+        	// API 요청 시 매 요청마다 1초의 간격 부여
         	Thread.currentThread().sleep(1000);
         	log.get().info("Current PageNumber : " + pageNumber.get());
             // 쿼리를 UTF-8로 인코딩
@@ -92,8 +92,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             
-//                log.get().info("apiUrl : {}", apiUrl);
-
             // API 응답 확인
             responseCode = connection.getResponseCode();
             if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -108,6 +106,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
             	responseXml = response.toString();
             }
             else throw new Exception("API 요청에 실패했습니다. 응답 코드: " + responseCode);
+            
+            // 제대로 된 응답을 받지 못한 경우 해당 페이지 넘김
             if(responseXml == null || responseXml.equals("")) {
             	pageNumber.set(pageNumber.get() + 1);
             	if(pageNumber.get() > 25) break;
@@ -120,9 +120,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         
         JAXBContext jaxbContext = JAXBContext.newInstance(ProductSearchResponse.class);
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+        // 응답을 ProductSearchResponse 객체로 만들어서 사용
         ProductSearchResponse responseString = (ProductSearchResponse) unmarshaller.unmarshal(new StringReader(responseXml));
 
-        // 접근 및 사용 예시
         Request request = responseString.getRequest();
         log.get().info("Processing Time: " + request.getProcessingTime());
 
@@ -131,13 +131,18 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 
         List<Product> productList = products.getProductList();
         
+        // 더 이상 상품을 가지고 있지 않다면 job 종료시키기 위해 return null
         if(productList == null) return null;
         
+        // 전체 상품개수 누적
         total += productList.size();
         
         for (Product product : productList) {
+        	// API 요청 시 매 요청마다 1초의 간격 부여
         	Thread.currentThread().sleep(1000);
         	Goods goods = new Goods();
+        	
+        	// 총 3번까지 재시도 가능
         	Count.set(0);
 			while(true) {
 				Boolean isOk = true;
@@ -150,8 +155,6 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	            connection = (HttpURLConnection) url.openConnection();
 	            connection.setRequestMethod("GET");
 	            
-//				            log.get().info("apiUrl : {}", apiUrl);
-
 	            // API 응답 확인
 	            responseCode = connection.getResponseCode();
 	            if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -164,6 +167,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	                in.close();
 	                
                 	responseXml = response.toString();
+                	
+                	// 제대로 된 응답을 받지 못하거나 오류가 있는 경우 해당 상품 넘김
                 	if(responseXml == null || responseXml.equals("")) break;
                 	if(responseXml.contains("ErrorResponse")) {
                 		log.get().info("ErrorResponse is occured");
@@ -172,6 +177,8 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
                 	
                     jaxbContext = JAXBContext.newInstance(ProductInfoResponse.class);
                     unmarshaller = jaxbContext.createUnmarshaller();
+                    
+                    // 응답을 ProductInfoResponse 객체로 만들어서 사용
                     ProductInfoResponse responseString2 = (ProductInfoResponse) unmarshaller.unmarshal(new StringReader(responseXml));
                     Product product2 = responseString2.getProduct();
                     
@@ -196,19 +203,12 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 						isOk = false;
 					}
 					
-					//렌탈인지 검증
-//					if(!(product2.getInstallment() == null) || !product2.getInstallment().equals("")) {
-//						log.get().info("해당 상품은 렌탈상품입니다.");
-//						break;									
-//					}
-						
 					log.get().info("price : {}", product.getSalePrice());
 					goods.setPrice(product.getSalePrice());
 					if((Integer)product.getSalePrice() == null || product.getSalePrice() == 0) {
 						isOk = false;
 					}
 					
-					// delivery 1
 					Integer deliveryFee = null;
 					String delivery = product2.getShipFee();
 					log.get().info("delivery Check : {}", product2.getShipFee());
@@ -216,17 +216,25 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 					boolean isExist = false;
 					while(st.hasMoreTokens()) {
 						String token = st.nextToken();
+						
+						// 배송비 문자열 중 무료배송 CASE
 						if(token.contains("무료") || token.contains("SMS") || token.contains("없음")) {
 							deliveryFee = 0;
 							isExist = true;
 							break;
 						}
+						
+						// 배송비 문자열 중 유료배송 CASE
 						if(token.contains("원")) {
+							
+							// 배송비 문자열 중 "/"이 포함될 경우 단일배송비가 아닌 여러 CASE가 존재하므로 별도확인필요(null로 INSERT)
 							if(!delivery.contains("/")) deliveryFee = Integer.parseInt(token.replaceAll("[^0-9]", ""));
 							isExist = true;
 							break;
 						}
 					}
+					
+					// 배송비 문자열 중 유료배송이면서 단일배송비가 아닌 여러 CASE가 존재하므로 별도확인필요(null로 INSERT)
 					if(!isExist && (delivery.contains("착불") || delivery.contains("참조"))) {
 						isExist = true;
 					}
@@ -242,15 +250,17 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 						isOk = false;
 					}
 					
+					// 앞선 정보들 중 하나라도 null이거나 데이터가 존재하지 않는 경우 isOk = false
 					if(isOk) {
 						goodsList.add(goods);
+						// INSERT 상품개수 누적
 						insert++;
 						break;
 					}
 					
 					Count.set(Count.get() + 1);
                 	if(Count.get() > 3) {
-                		throw new Exception("Price select count over 3");
+                		throw new Exception("Product API callCount over 3");
                 	}
 	            }
 			}
@@ -270,8 +280,9 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
 	}
 
 	@Override
+	// read 메서드 시작하기 전 호출
 	public void beforeStep(StepExecution stepExecution) {
-		// TODO Auto-generated method stub
+		// StepExecution에서 String으로 받아온 BatchSchedule 정보로 객체구현
 		batchSchedule.set(new BatchSchedule());
     	batchSchedule.get().setBatchName((String) stepExecution.getJobExecution().getJobParameters().getString("batchName"));
     	batchSchedule.get().setUrl((String) stepExecution.getJobExecution().getJobParameters().getString("url"));
@@ -299,10 +310,13 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     	batchSchedule.get().setUrlSelector3((String) stepExecution.getJobExecution().getJobParameters().getString("urlSelector3"));
     	batchSchedule.get().setNextButtonSelector((String) stepExecution.getJobExecution().getJobParameters().getString("nextButtonSelector"));
     	batchSchedule.get().setImageSelector((String) stepExecution.getJobExecution().getJobParameters().getString("imageSelector"));
-    	stepEx.set(stepExecution);
-    	account = (String) stepExecution.getJobExecution().getJobParameters().getString("account");
     	log.get().info("target : " + batchSchedule.get().getTarget());
-		// 이전 실행에서 저장한 pageNum을 가져옴
+    	
+    	stepEx.set(stepExecution);
+    	jobExecution.set(stepExecution.getJobExecution());
+    	account = (String) stepExecution.getJobExecution().getJobParameters().getString("account");
+		
+    	// 이전 실행에서 저장한 pageNum, totalSize, insertSize 사용(job 단위로 누적 후 Slack 알림발송)
         ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
         if (executionContext.containsKey("startPageNum")) {
         	pageNumber.set((int) executionContext.get("startPageNum"));
@@ -319,20 +333,18 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         } else {
         	insertSize.set(0); // 최초 실행 시 insertSize은 0로 초기화
         }
-		jobExecution.set(stepExecution.getJobExecution());
-		set.add(Thread.currentThread().getName().replaceAll("[^0-9]", ""));
 	}
 
 	@Override
+	// read 메서드 종료 후 호출
 	public ExitStatus afterStep(StepExecution stepExecution) {
-		// TODO Auto-generated method stub
 		ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
 		executionContext.put("target", batchSchedule.get().getTarget());
 		executionContext.put("account", account);
+		// pageNum, totalSize, insertSize 저장(job 단위로 누적 후 Slack 알림발송)
         executionContext.put("startPageNum", pageNumber.get());
         executionContext.put("totalSize", totalSize.get());
         executionContext.put("insertSize", insertSize.get());
-        set.remove(Thread.currentThread().getName().replaceAll("[^0-9]", ""));
 		return ExitStatus.COMPLETED;
 	}
 }

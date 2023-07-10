@@ -1,7 +1,6 @@
 package com.example.batch.chunk;
 
 import java.util.List;
-
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -16,7 +15,7 @@ public class MyBatisItemWriter implements ItemWriter<List<Goods>>{
 
 	@Override
 	public void write(List<? extends List<Goods>> items) throws Exception {
-		// TODO Auto-generated method stub
+		// 각 item 순회하며 insert(각 chunk가 끝날 때마다 DB에 적재)
 		for(List<Goods> item : items) {
 			goodsService.insertGoodsList(item);
 		}

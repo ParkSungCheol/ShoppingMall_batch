@@ -10,13 +10,14 @@ import javax.sql.DataSource;
 import org.springframework.stereotype.Component;
 
 @Component
+// DB connection을 추적할 수 있도록 커스터마이징
 public class TrackedDataSource implements DataSource {
 	
 	private DataSource dataSource;
+	// open된 DB connection을 모아두는 변수
     private List<Connection> trackedConnections;
     
 	public TrackedDataSource(DataSource dataSource) {
-		// TODO Auto-generated constructor stub
 		this.dataSource = dataSource;
 		this.trackedConnections = new ArrayList<>();
 	}
@@ -24,6 +25,7 @@ public class TrackedDataSource implements DataSource {
 	@Override
     public Connection getConnection() throws SQLException {
         Connection connection = dataSource.getConnection();
+        // List에 추가
         trackedConnections.add(connection);
         return connection;
     }
@@ -31,11 +33,13 @@ public class TrackedDataSource implements DataSource {
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
         Connection connection = dataSource.getConnection(username, password);
+        // List에 추가
         trackedConnections.add(connection);
         return connection;
     }
     
     public List<Connection> getAllConnections() {
+    	// DB connection List 반환
         return trackedConnections;
     }
 

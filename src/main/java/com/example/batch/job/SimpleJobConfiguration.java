@@ -1,7 +1,6 @@
 package com.example.batch.job;
 
 import java.util.List;
-
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
@@ -19,18 +18,10 @@ import com.example.batch.chunk.WebCrawlingReader;
 import com.example.batch.config.JobCompletionNotificationListener;
 import com.example.batch.config.TimeoutDecider;
 
-/*
---job.name=incrementerJob
- */
-
-/**
- * JobParametersIncrementer.java - getNext()
- */
 @Configuration
 @EnableBatchProcessing
 public class SimpleJobConfiguration {
 
-    // job 생성
 	@Autowired
     private JobBuilderFactory jobBuilderFactory;
 	@Autowired
@@ -53,23 +44,25 @@ public class SimpleJobConfiguration {
     public Job myJob() {
     	Step step = myStep();
         return this.jobBuilderFactory.get("myJob")
+        		// BeforeJob, AfterJob 호출
         		.listener(jobCompletionNotificationListener)
                 /* step start */
-                // 기존 구현체
         		.start(step)
-                .on("FAILED").to(timeoutDecider)
-                .on("COMPLETED").end()
+                .on("FAILED").to(timeoutDecider) // 실패 시 timeoutDecider 호출
+                .on("COMPLETED").end() // 성공 시 step end
                 .from(timeoutDecider)
-                    .on("RESTART").to(step)
-                    .on("COMPLETED").end()
-                    .on("*").fail()
+                    .on("RESTART").to(step) // timeoutDecider에서 RESTART 발생 시 step 재실행
+                    .on("COMPLETED").end() // timeoutDecider에서 COMPLETE 발생 시 step end
+                    .on("*").fail() // timeoutDecider에서 다른 이벤트 발생 시 fail 처리(Job Failed)
                 .end()
-                .incrementer(new RunIdIncrementer())
+                /* step end */
+                .incrementer(new RunIdIncrementer()) // job이 중복되지 않도록 id 부여
                 .build();
     }
 
     public Step myStep() {
         return stepBuilderFactory.get("myStep")
+        		// chunk 1 단위가 끝날때마다 DB에 SQL push
                 .<List<Goods>, List<Goods>>chunk(1)
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)

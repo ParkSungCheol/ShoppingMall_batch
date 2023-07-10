@@ -4,6 +4,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "Request")
+// XML정보를 매핑할 CLASS
 public class Request {
     private Arguments arguments;
     private String processingTime;

@@ -27,6 +27,7 @@ public class PhoneService {
         this.env = env;
     }
 	
+	// NAVER SENS API 이용하여 메시지 전송
 	public void sendMessage(String phone, String message) throws Exception{
 		String hostNameUrl ="https://sens.apigw.ntruss.com";
         String requestUrl = "/sms/v2/services/";

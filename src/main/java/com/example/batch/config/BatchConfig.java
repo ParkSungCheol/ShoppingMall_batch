@@ -27,6 +27,7 @@ public class BatchConfig implements BatchConfigurer {
     @Bean
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        // 4개의 쓰레드 사용
         taskExecutor.setCorePoolSize(4);
         taskExecutor.setMaxPoolSize(4);
         taskExecutor.setThreadNamePrefix("batch-thread-");
@@ -43,25 +44,25 @@ public class BatchConfig implements BatchConfigurer {
 		JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
         factory.setDataSource(dataSource);
         factory.setTransactionManager(getTransactionManager());
-        factory.setIsolationLevelForCreate("ISOLATION_REPEATABLE_READ"); // 원하는 Isolation Level 설정
-        factory.setDatabaseType("MYSQL"); // 데이터베이스 유형 설정
+        // 원하는 Isolation Level 설정
+        factory.setIsolationLevelForCreate("ISOLATION_REPEATABLE_READ");
+        // 데이터베이스 유형 설정
+        factory.setDatabaseType("MYSQL");
         factory.afterPropertiesSet();
         return factory.getObject();
 	}
 
 	@Override
 	public PlatformTransactionManager getTransactionManager() throws Exception {
-		// TODO Auto-generated method stub
 		DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
-//        transactionManager.setTransactionTimeout(0); // timeout 설정
         return transactionManager;
 	}
 
 	@Override
 	public JobLauncher getJobLauncher() throws Exception {
-		// TODO Auto-generated method stub
 		SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
         jobLauncher.setJobRepository(getJobRepository());
+        // 다중쓰레드 설정
         jobLauncher.setTaskExecutor(taskExecutor);
         jobLauncher.afterPropertiesSet();
         return jobLauncher;
@@ -69,7 +70,6 @@ public class BatchConfig implements BatchConfigurer {
 
 	@Override
 	public JobExplorer getJobExplorer() throws Exception {
-		// TODO Auto-generated method stub
 		JobExplorerFactoryBean factory = new JobExplorerFactoryBean();
         factory.setDataSource(dataSource);
         factory.afterPropertiesSet();

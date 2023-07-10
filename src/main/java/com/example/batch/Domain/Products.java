@@ -1,11 +1,11 @@
 package com.example.batch.Domain;
 
 import java.util.List;
-
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement(name = "Products")
+// XML정보를 매핑할 CLASS
 public class Products {
     private int totalCount;
     private List<Product> productList;

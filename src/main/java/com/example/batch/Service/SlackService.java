@@ -6,9 +6,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
-
 import org.springframework.stereotype.Component;
-
 import net.gpedro.integrations.slack.SlackApi;
 import net.gpedro.integrations.slack.SlackAttachment;
 import net.gpedro.integrations.slack.SlackField;
@@ -22,14 +20,12 @@ public class SlackService {
     private SlackMessage slackMessage;
 	
 	public SlackService(SlackApi slackApi) {
-		// TODO Auto-generated constructor stub
 		this.slackApi = slackApi;
 		slackAttachment = new SlackAttachment();
 		slackMessage = new SlackMessage();
 	}
     
     public void call(int flag, String msg) {
-    	
     	// Failed
     	if(flag == 0) {
     		slackAttachment.setFallback("Failed");
