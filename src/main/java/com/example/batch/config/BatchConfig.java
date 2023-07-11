@@ -40,7 +40,6 @@ public class BatchConfig implements BatchConfigurer {
 
 	@Override
 	public JobRepository getJobRepository() throws Exception {
-		// TODO Auto-generated method stub
 		JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
         factory.setDataSource(dataSource);
         factory.setTransactionManager(getTransactionManager());

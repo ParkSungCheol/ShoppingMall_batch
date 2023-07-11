@@ -62,7 +62,7 @@ public class BatchApplication implements CommandLineRunner {
 	private static final String INDEX_NAME = "goods";
 	// ES Size
     private static final int BATCH_SIZE = 800;
-    // 다중쓰레드 수
+    // 다중쓰레드 수 
     private static final int MAX_THREADS = 20;
 	
 	public static void main(String[] args) {
