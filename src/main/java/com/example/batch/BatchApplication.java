@@ -37,7 +37,7 @@ import com.example.batch.Service.JobStatusService;
 import com.example.batch.job.SimpleJobConfiguration;
 
 @SpringBootApplication
-public class BatchApplication implements CommandLineRunner {
+public class BatchApplication implements CommandLineRunner { 
 
 	@Autowired
 	JobLauncher jobLauncher;
