@@ -48,7 +48,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
     private static final ThreadLocal<Integer> Count = new ThreadLocal<>();
-    private static String account;
+    private static String account; 
     
 	@Value("${11st.api-url}")
     private String API_URL;
