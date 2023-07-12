@@ -63,7 +63,7 @@ public class BatchApplication implements CommandLineRunner {
 	// ES Size
     private static final int BATCH_SIZE = 800;
     // 다중쓰레드 수 
-    private static final int MAX_THREADS = 20;
+    private static final int MAX_THREADS = 16;
 	
 	public static void main(String[] args) {
 		context = SpringApplication.run(BatchApplication.class, args);
