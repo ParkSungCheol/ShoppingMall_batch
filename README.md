@@ -39,7 +39,7 @@
   + 데이터의 일관성 및 무결성 보장, 정형화된 관계파악에 적합
 + **[ Logstash ]** 
   + RDB와 ES간의 동기화
-  + schedule에 cron 표현식으로 10초마다 SELECT 문 실행하게 설정
+  + schedule에 cron 표현식으로 5초마다 SELECT 문 실행하게 설정
   + statement에 SELECT 할 때 MySQL의 timeStamp를 tracking_column으로 설정하고 <br/>WHERE 조건에 이전에 적재한 timeStamp 값을 :sql_last_value 파라미터로 받아 활용하여 <br/>데이터가 누락되거나 중복되지 않게 적재
 + **[ 데이터 흐름 ]** 
   + 스프링 배치 => RDB 데이터 적재 => Logstash => ES 데이터 적재
