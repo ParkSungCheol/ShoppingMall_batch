@@ -28,8 +28,8 @@ public class BatchConfig implements BatchConfigurer {
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         // 20개의 쓰레드 사용
-        taskExecutor.setCorePoolSize(16);
-        taskExecutor.setMaxPoolSize(16);
+        taskExecutor.setCorePoolSize(8);
+        taskExecutor.setMaxPoolSize(8);
         taskExecutor.setThreadNamePrefix("batch-thread-");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
         taskExecutor.setAwaitTerminationSeconds(-1);
