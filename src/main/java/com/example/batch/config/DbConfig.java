@@ -5,8 +5,6 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.annotation.MapperScan;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -15,7 +13,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
-
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -23,8 +20,6 @@ import com.zaxxer.hikari.HikariDataSource;
 @MapperScan(value = "com.example.batch", sqlSessionFactoryRef = "SqlSessionFactory")
 public class DbConfig {
 	
-	private Logger log = LoggerFactory.getLogger(this.getClass());
-
     @Value("${spring.datasource.mapper-locations}")
     String mPath;
 
@@ -41,7 +36,6 @@ public class DbConfig {
     @Bean(name = "dataSource")
     public DataSource DataSource() {
         DataSource dataSource = new HikariDataSource(hikariConfig());
-        log.info(dataSource.toString());
         return dataSource;
     }
 

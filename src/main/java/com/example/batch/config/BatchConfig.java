@@ -1,5 +1,7 @@
 package com.example.batch.config;
 
+import javax.sql.DataSource;
+
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.explore.support.JobExplorerFactoryBean;
@@ -17,10 +19,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Configuration
 public class BatchConfig implements BatchConfigurer {
 
-	private final TrackedDataSource dataSource;
+	private final DataSource dataSource;
 	private TaskExecutor taskExecutor;
 	
-	public BatchConfig(TrackedDataSource dataSource) {
+	public BatchConfig(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 	

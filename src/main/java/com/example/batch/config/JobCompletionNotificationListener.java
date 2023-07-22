@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
@@ -30,7 +31,7 @@ import com.example.batch.Service.SlackService;
 @Component
 public class JobCompletionNotificationListener implements JobExecutionListener {
 
-    private final TrackedDataSource dataSource;
+    private final DataSource dataSource;
     private Connection connection;
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private TaskExecutor taskExecutor;
@@ -43,7 +44,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 	private ElasticsearchService elasticsearchService;
 	private PhoneService phoneService;
     
-    public JobCompletionNotificationListener(TrackedDataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
+    public JobCompletionNotificationListener(DataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
@@ -171,16 +172,13 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		}
     		log.info("#### ALL job END ####");
     		
-    		// DB connection 모두 종료
-    		List<Connection> connections = dataSource.getAllConnections();
-    		for(Connection connection : connections) {
-    			try {
-                    connection.close();
-                    log.info("db connection closed");
-                } catch (SQLException i) {
-                    i.printStackTrace();
-                }
-    		}
+    		// DB connection 종료
+            try {
+				connection.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
     		
     		// 그동안 집계한 전체 job의 성공/실패 횟수를 Slack 메시지로 전달
     		String finalMsg = "All Job Complete\n";
