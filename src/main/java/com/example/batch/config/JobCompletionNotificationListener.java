@@ -9,15 +9,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+
 import javax.sql.DataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
+
 import com.example.batch.Domain.JobStatus;
 import com.example.batch.Domain.Search;
 import com.example.batch.Domain.esGoods;
@@ -43,8 +47,9 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 	private SearchService searchService;
 	private ElasticsearchService elasticsearchService;
 	private PhoneService phoneService;
+	private ConfigurableApplicationContext applicationContext;
     
-    public JobCompletionNotificationListener(DataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
+    public JobCompletionNotificationListener(ConfigurableApplicationContext applicationContext, DataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
         this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
@@ -52,6 +57,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
         this.searchService = searchService;
         this.elasticsearchService = elasticsearchService;
         this.phoneService = phoneService;
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -175,6 +181,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		// DB connection 종료
             try {
 				connection.close();
+				log.info("db connection closed");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -187,6 +194,16 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		slackService.call(1, finalMsg);
     		
     		tte.shutdown();
+    		
+    		try {
+				Thread.currentThread().sleep(600000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    		
+    		// SpringApplication 종료
+    		applicationContext.close();
     	}
     }
     
