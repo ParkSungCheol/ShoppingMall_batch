@@ -35,8 +35,6 @@ import com.example.batch.Service.SlackService;
 @Component
 public class JobCompletionNotificationListener implements JobExecutionListener {
 
-    private final DataSource dataSource;
-    private Connection connection;
     private Logger log = LoggerFactory.getLogger(this.getClass());
     private TaskExecutor taskExecutor;
     private static long jobCount = -1;
@@ -50,7 +48,6 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 	private ConfigurableApplicationContext applicationContext;
     
     public JobCompletionNotificationListener(ConfigurableApplicationContext applicationContext, DataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
-        this.dataSource = dataSource;
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
         this.jobStatusService = jobStatusService;
@@ -63,20 +60,11 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     @Override
     // job 시작 전 호출
     public void beforeJob(JobExecution jobExecution) {
-    	try {
-    		// DB connection이 제대로 설정되어있지 않다면
-            if (connection == null || connection.isClosed()) {
-                connection = dataSource.getConnection();
-                // jobCount 초기화
-                if(jobCount == -1) {
-            		long jobCount_param = (long) jobExecution.getJobParameters().getLong("jobCount");
-            		jobCount = jobCount_param;
-            	}
-                log.info("db connection opened");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+		// jobCount 초기화
+        if(jobCount == -1) {
+    		long jobCount_param = (long) jobExecution.getJobParameters().getLong("jobCount");
+    		jobCount = jobCount_param;
+    	}
     }
 
     @Override
@@ -177,15 +165,6 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     			}
     		}
     		log.info("#### ALL job END ####");
-    		
-    		// DB connection 종료
-            try {
-				connection.close();
-				log.info("db connection closed");
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
     		
     		// 그동안 집계한 전체 job의 성공/실패 횟수를 Slack 메시지로 전달
     		String finalMsg = "All Job Complete\n";
