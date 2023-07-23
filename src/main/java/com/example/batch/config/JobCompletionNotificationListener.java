@@ -174,13 +174,6 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		
     		tte.shutdown();
     		
-    		try {
-				Thread.currentThread().sleep(600000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-    		
     		// SpringApplication 종료
     		applicationContext.close();
     	}

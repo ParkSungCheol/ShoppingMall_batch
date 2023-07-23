@@ -33,7 +33,7 @@ public class BatchConfig implements BatchConfigurer {
         taskExecutor.setCorePoolSize(4);
         taskExecutor.setMaxPoolSize(4);
         taskExecutor.setThreadNamePrefix("batch-thread-");
-        taskExecutor.setWaitForTasksToCompleteOnShutdown(true);
+        taskExecutor.setWaitForTasksToCompleteOnShutdown(false);
         taskExecutor.setAwaitTerminationSeconds(600);
         taskExecutor.initialize();
         this.taskExecutor = taskExecutor;
