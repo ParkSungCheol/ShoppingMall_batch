@@ -222,4 +222,43 @@ public class BatchSchedule {
 	public void setDeliveryFeeSelector4(String deliveryFeeSelector4) {
 		this.deliveryFeeSelector4 = deliveryFeeSelector4;
 	}
+	public BatchSchedule(int batchNum, String batchName, String target, String url, String totalSelector,
+			String titleSelector1, String titleSelector2, String titleSelector3, Integer titleLocation,
+			String priceSelector1, String priceSelector2, String priceSelector3, Integer priceLocation,
+			String deliveryFeeSelector1, String deliveryFeeSelector2, String deliveryFeeSelector3,
+			String deliveryFeeSelector4, Integer deliveryFeeLocation, String sellerSelector1, String sellerSelector2,
+			String sellerSelector3, Integer sellerLocation, String urlSelector1, String urlSelector2,
+			String urlSelector3, String nextButtonSelector, String imageSelector) {
+		super();
+		this.batchNum = batchNum;
+		this.batchName = batchName;
+		this.target = target;
+		this.url = url;
+		this.totalSelector = totalSelector;
+		this.titleSelector1 = titleSelector1;
+		this.titleSelector2 = titleSelector2;
+		this.titleSelector3 = titleSelector3;
+		this.titleLocation = titleLocation;
+		this.priceSelector1 = priceSelector1;
+		this.priceSelector2 = priceSelector2;
+		this.priceSelector3 = priceSelector3;
+		this.priceLocation = priceLocation;
+		this.deliveryFeeSelector1 = deliveryFeeSelector1;
+		this.deliveryFeeSelector2 = deliveryFeeSelector2;
+		this.deliveryFeeSelector3 = deliveryFeeSelector3;
+		this.deliveryFeeSelector4 = deliveryFeeSelector4;
+		this.deliveryFeeLocation = deliveryFeeLocation;
+		this.sellerSelector1 = sellerSelector1;
+		this.sellerSelector2 = sellerSelector2;
+		this.sellerSelector3 = sellerSelector3;
+		this.sellerLocation = sellerLocation;
+		this.urlSelector1 = urlSelector1;
+		this.urlSelector2 = urlSelector2;
+		this.urlSelector3 = urlSelector3;
+		this.nextButtonSelector = nextButtonSelector;
+		this.imageSelector = imageSelector;
+	}
+	public BatchSchedule() {
+		
+	}
 }
