@@ -9,6 +9,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
@@ -172,17 +174,25 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		finalMsg += "Successed : " + successedCount;
     		slackService.call(1, finalMsg);
     		
+    		// ThreadPoolTaskExecutor 종료 요청
     		tte.shutdown();
-    		
+
+    		// 모든 스레드가 종료될 때까지 대기
+    		ExecutorService executorService = tte.getThreadPoolExecutor();
+    		executorService.shutdown();
     		try {
-				Thread.currentThread().sleep(700000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-    		
+    		    if (!executorService.awaitTermination(20, TimeUnit.MINUTES)) {
+    		        // 만약 20분 이내에 스레드들이 종료되지 않으면 강제 종료
+    		        executorService.shutdownNow();
+    		    }
+    		} catch (InterruptedException e) {
+    		    executorService.shutdownNow();
+    		    Thread.currentThread().interrupt();
+    		}
+
     		// SpringApplication 종료
     		applicationContext.close();
+
     	}
     }
     
