@@ -73,7 +73,7 @@ public class BatchApplication implements CommandLineRunner {
 	}
 	
 	@Override
-	@Transactional("txManager")
+	@Transactional("mainTxManager")
 	  public void run(String... args) throws Exception 
 	  {
 		if (args.length > 0) {

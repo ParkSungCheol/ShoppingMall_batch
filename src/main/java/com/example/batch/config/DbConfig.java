@@ -41,7 +41,7 @@ public class DbConfig {
 
 
     @Bean(name = "mainSqlSessionFactory")
-    public SqlSessionFactory SqlSessionFactory(@Qualifier("dataSource") DataSource DataSource, ApplicationContext applicationContext) throws Exception {
+    public SqlSessionFactory SqlSessionFactory(@Qualifier("mainDataSource") DataSource DataSource, ApplicationContext applicationContext) throws Exception {
         SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
         sqlSessionFactoryBean.setDataSource(DataSource);
         sqlSessionFactoryBean.setMapperLocations(applicationContext.getResources(mPath));
@@ -50,7 +50,7 @@ public class DbConfig {
     }
 
     @Bean(name = "mainSessionTemplate")
-    public SqlSessionTemplate SqlSessionTemplate(@Qualifier("SqlSessionFactory") SqlSessionFactory firstSqlSessionFactory) {
+    public SqlSessionTemplate SqlSessionTemplate(@Qualifier("mainSqlSessionFactory") SqlSessionFactory firstSqlSessionFactory) {
         return new SqlSessionTemplate(firstSqlSessionFactory);
     }
     
@@ -59,7 +59,7 @@ public class DbConfig {
      */
     @Bean(name= "mainTxManager")
     // 트랜잭션 관리
-    public PlatformTransactionManager txManager(@Qualifier("dataSource") DataSource dataSource) {
+    public PlatformTransactionManager txManager(@Qualifier("mainDataSource") DataSource dataSource) {
         DataSourceTransactionManager dataSourceTransactionManager = new DataSourceTransactionManager(dataSource);
         dataSourceTransactionManager.setNestedTransactionAllowed(true); // nested
         return dataSourceTransactionManager;
