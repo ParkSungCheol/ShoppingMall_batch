@@ -1,6 +1,9 @@
 package com.example.batch.chunk;
 
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.StepExecution;
@@ -20,9 +23,11 @@ public class WebCrawlingReaderTest implements ItemReader<List<Goods>>, StepExecu
     private static final ThreadLocal<BatchSchedule> batchSchedule = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
+    private Logger log = LoggerFactory.getLogger(this.getClass());
     
 	@Override
 	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
+		log.info("############ BatchName : {} ##############", batchSchedule.get().getBatchName());
 		return null;
 	}
 

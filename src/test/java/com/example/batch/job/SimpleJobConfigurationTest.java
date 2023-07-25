@@ -10,8 +10,10 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import com.example.batch.Domain.Goods;
 import com.example.batch.chunk.DataProcessorTest;
@@ -19,7 +21,7 @@ import com.example.batch.chunk.MyBatisItemWriterTest;
 import com.example.batch.chunk.WebCrawlingReaderTest;
 import com.example.batch.config.JobCompletionNotificationListenerTest;
 
-@TestConfiguration
+@Configuration
 @EnableBatchProcessing
 public class SimpleJobConfigurationTest {
 
@@ -30,8 +32,10 @@ public class SimpleJobConfigurationTest {
 	@Autowired
 	private JobCompletionNotificationListenerTest jobCompletionNotificationListener;
 	@Autowired
+	@Qualifier(value = "testJobLauncher")
 	JobLauncher jobLauncher;
 	@Autowired
+	@Qualifier(value = "testJobRepository")
 	JobRepository jobRepository;
 	@Autowired
 	WebCrawlingReaderTest webCrawlingReader;
@@ -40,6 +44,7 @@ public class SimpleJobConfigurationTest {
 	@Autowired
 	MyBatisItemWriterTest myBatisItemWriter;
 
+	@Bean
     public Job myJob() {
     	Step step = myStep();
         return this.jobBuilderFactory.get("myJob")
@@ -52,6 +57,7 @@ public class SimpleJobConfigurationTest {
                 .build();
     }
 
+	@Bean
     public Step myStep() {
         return stepBuilderFactory.get("myStep")
         		// chunk 1 단위가 끝날때마다 DB에 SQL push

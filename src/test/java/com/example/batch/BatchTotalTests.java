@@ -2,47 +2,47 @@ package com.example.batch;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.task.TaskExecutor;
-import org.springframework.transaction.annotation.Transactional;
 import com.example.batch.Domain.BatchSchedule;
-import com.example.batch.Service.BatchScheduleService;
+import com.example.batch.Service.BatchScheduleServiceTest;
+import com.example.batch.config.BatchConfigTest;
+import com.example.batch.config.DbConfigTest;
 import com.example.batch.job.SimpleJobConfigurationTest;
 
-@SpringBootApplication
 @SpringBatchTest
-@SpringBootTest
-@Transactional(value="txManager")
-class BatchTotalTests implements CommandLineRunner {
+@SpringBootTest(classes = {BatchConfigTest.class, DbConfigTest.class})
+public class BatchTotalTests {
 
-	static int jobCount = -1;
+	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
+    	return LoggerFactory.getLogger(this.getClass());
+    });
+	static int jobCount;
 	static boolean isClosed = false;
 	static String account = "1";
-	private static ConfigurableApplicationContext context;
 	@Autowired
-	BatchScheduleService service;
+	BatchScheduleServiceTest service;
 	@Autowired
+	@Qualifier(value = "testTaskExecutor")
 	TaskExecutor taskExecutor;
 	@Autowired
+	@Qualifier(value = "testJobLauncher")
 	JobLauncher jobLauncher;
 	@Autowired 
 	SimpleJobConfigurationTest simpleJobConfiguration; 
 
-	public static void main(String[] args) {
-		context = SpringApplication.run(BatchTotalTests.class, args);
-	}
-	
-	@Override
-	public void run(String... args) throws Exception {
+	@Test
+	public void simpleTotalTest(){
+		
 		// given
 
 		int MAX_THREADS = 4;
@@ -53,9 +53,52 @@ class BatchTotalTests implements CommandLineRunner {
         // when
         
         // jobCount 초기화
-        if(jobCount == -1) {
-    		jobCount = batchSchedules.size();
-    	}
+		jobCount = batchSchedules.size();
+        
+//        for(BatchSchedule bs : batchSchedules) {
+//        	log.get().info("###### batchName : {} #######", bs.getBatchName());
+//    		
+//    		JobParameters jobParameters = new JobParametersBuilder()
+//            		.addString("batchNum", Integer.toString(bs.getBatchNum()))
+//            		.addString("batchName", bs.getBatchName())
+//                    .addString("url", bs.getUrl())
+//                    .addString("target", bs.getTarget())
+//                    .addString("totalSelector", bs.getTotalSelector())
+//                    .addString("titleSelector1", bs.getTitleSelector1())
+//                    .addString("titleSelector2", bs.getTitleSelector2())
+//                    .addString("titleSelector3", bs.getTitleSelector3())
+//                    .addString("titleLocation", Integer.toString(bs.getTitleLocation() != null? bs.getTitleLocation() : 0))
+//                    .addString("priceSelector1", bs.getPriceSelector1())
+//                    .addString("priceSelector2", bs.getPriceSelector2())
+//                    .addString("priceSelector3", bs.getPriceSelector3())
+//                    .addString("priceLocation", Integer.toString(bs.getPriceLocation() != null? bs.getPriceLocation() : 0))
+//                    .addString("deliveryFeeSelector1", bs.getDeliveryFeeSelector1())
+//                    .addString("deliveryFeeSelector2", bs.getDeliveryFeeSelector2())
+//                    .addString("deliveryFeeSelector3", bs.getDeliveryFeeSelector3())
+//                    .addString("deliveryFeeSelector4", bs.getDeliveryFeeSelector4())
+//                    .addString("deliveryFeeLocation", Integer.toString(bs.getDeliveryFeeLocation() != null? bs.getDeliveryFeeLocation() : 0))
+//                    .addString("sellerSelector1", bs.getSellerSelector1())
+//                    .addString("sellerSelector2", bs.getSellerSelector2())
+//                    .addString("sellerSelector3", bs.getSellerSelector3())
+//                    .addString("sellerLocation", Integer.toString(bs.getSellerLocation() != null? bs.getSellerLocation() : 0))
+//                    .addString("urlSelector1", bs.getUrlSelector1())
+//                    .addString("urlSelector2", bs.getUrlSelector2())
+//                    .addString("urlSelector3", bs.getUrlSelector3())
+//                    .addString("nextButtonSelector", bs.getNextButtonSelector())
+//                    .addString("imageSelector", bs.getImageSelector())
+//                    // 추후 Slack에 보낼 계정 이름
+//                    .addString("account",  account)
+//                    // 추후 모든 job이 완료되었는지를 판별할 때 사용할 전체 job 개수
+//                    .addLong("jobCount", (long) batchSchedules.size())
+//                    // 각 job을 구별할 구분자
+//                    .addLong("time", System.currentTimeMillis())
+//                    .toJobParameters();
+//    		try {
+//                jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
+//            } catch(Exception e) {
+//            	e.printStackTrace();
+//            }
+//        }
         
 		for (int i = 0; i < numThreads; i++) {
         	List<BatchSchedule> subList = new ArrayList<BatchSchedule>();
@@ -68,6 +111,10 @@ class BatchTotalTests implements CommandLineRunner {
             taskExecutor.execute(() -> {
             	// 각 쓰레드에 할당된 배치대상 검색어 리스트를 가지고 jobLauncher Run
             	for (BatchSchedule batchSchedule : subList) {
+            		
+            		log.get().info("###### subList.size() : {} #######", subList.size());
+            		log.get().info("###### batchName : {} #######", batchSchedule.getBatchName());
+            		
             		JobParameters jobParameters = new JobParametersBuilder()
                     		.addString("batchNum", Integer.toString(batchSchedule.getBatchNum()))
                     		.addString("batchName", batchSchedule.getBatchName())
@@ -107,8 +154,6 @@ class BatchTotalTests implements CommandLineRunner {
 	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
                     } catch(Exception e) {
                     	e.printStackTrace();
-                    	// 오류 발생시 SpringApplication 종료
-                    	SpringApplication.exit(context);
                     }
                 }
             });

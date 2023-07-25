@@ -19,22 +19,22 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
-public class BatchConfig implements BatchConfigurer {
+public class BatchConfigTest implements BatchConfigurer {
 
 	private final DataSource dataSource;
 	private TaskExecutor taskExecutor;
 	
 	@Autowired
-	public BatchConfig(@Qualifier(value = "mainDataSource") DataSource dataSource) {
+	public BatchConfigTest(@Qualifier(value = "testDataSource") DataSource dataSource) {
         this.dataSource = dataSource;
     }
 	
-    @Bean(name = "mainTaskExecutor")
+    @Bean(name = "testTaskExecutor")
     public TaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         // 4개의 쓰레드 사용
-        taskExecutor.setCorePoolSize(4);
-        taskExecutor.setMaxPoolSize(4);
+        taskExecutor.setCorePoolSize(1);
+        taskExecutor.setMaxPoolSize(1);
         taskExecutor.setThreadNamePrefix("batch-thread-");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(false);
         taskExecutor.setAwaitTerminationSeconds(600);
@@ -44,7 +44,7 @@ public class BatchConfig implements BatchConfigurer {
     }
 
 	@Override
-	@Bean(name = "mainJobRepository")
+	@Bean(name = "testJobRepository")
 	public JobRepository getJobRepository() throws Exception {
 		JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
         factory.setDataSource(dataSource);
@@ -58,14 +58,14 @@ public class BatchConfig implements BatchConfigurer {
 	}
 
 	@Override
-	@Bean(name = "mainPlatformTransactionManager")
+	@Bean(name = "testPlatformTransactionManager")
 	public PlatformTransactionManager getTransactionManager() throws Exception {
 		DataSourceTransactionManager transactionManager = new DataSourceTransactionManager(dataSource);
         return transactionManager;
 	}
 
 	@Override
-	@Bean(name = "mainJobLauncher")
+	@Bean(name = "testJobLauncher")
 	public JobLauncher getJobLauncher() throws Exception {
 		SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
         jobLauncher.setJobRepository(getJobRepository());
@@ -76,7 +76,7 @@ public class BatchConfig implements BatchConfigurer {
 	}
 
 	@Override
-	@Bean(name = "mainJobExplorer")
+	@Bean(name = "testJobExplorer")
 	public JobExplorer getJobExplorer() throws Exception {
 		JobExplorerFactoryBean factory = new JobExplorerFactoryBean();
         factory.setDataSource(dataSource);

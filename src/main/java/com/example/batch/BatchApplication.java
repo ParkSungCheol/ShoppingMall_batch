@@ -24,6 +24,7 @@ import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -40,10 +41,12 @@ import com.example.batch.job.SimpleJobConfiguration;
 public class BatchApplication implements CommandLineRunner { 
 
 	@Autowired
+	@Qualifier(value = "mainJobLauncher")
 	JobLauncher jobLauncher;
 	@Autowired 
 	SimpleJobConfiguration simpleJobConfiguration; 
 	@Autowired
+	@Qualifier(value = "mainTaskExecutor")
     private TaskExecutor taskExecutor;
 	@Autowired
 	private JobStatusService jobStatusService;
@@ -73,85 +76,85 @@ public class BatchApplication implements CommandLineRunner {
 	@Transactional("txManager")
 	  public void run(String... args) throws Exception 
 	  {
-		if (args.length > 0) {
-            account = args[0];
-            startBatchNum = Integer.parseInt(args[1]);
-            endBatchNum = Integer.parseInt(args[2]);
-        }
-		
-		// 삭제로직 (is_deleted = 1인 데이터)
-		deleteDocumentsByQuery(client);
-        client.close();
-        // MYSQL은 DELETE 속도가 너무 느려서 주석처리
-		// goodsService.deleteGoodsList();
-		
-        // 전체 배치대상 검색어리스트 가져온 후
-		List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList(startBatchNum, endBatchNum);
-		
-		int numThreads = Math.min(MAX_THREADS, batchSchedules.size());
-
-		// 모든 계정의 job이 시작되었음을 DB에 적재 (추후 모든 job 종료판별 시 사용)
-		JobStatus jobStatus = new JobStatus();
-		jobStatus.setBatchId(Integer.parseInt(account));
-		jobStatusService.startJobStatus(jobStatus);
-		
-        for (int i = 0; i < numThreads; i++) {
-        	List<BatchSchedule> subList = new ArrayList<BatchSchedule>();
-        	
-        	// 각 쓰레드에 분배한 후
-        	for(int j = i; j < batchSchedules.size(); j += MAX_THREADS) {
-        		subList.add(batchSchedules.get(j));
-        	}
-
-            taskExecutor.execute(() -> {
-            	// 각 쓰레드에 할당된 배치대상 검색어 리스트를 가지고 jobLauncher Run
-            	for (BatchSchedule batchSchedule : subList) {
-                	log.get().info("batchSchedules : " + batchSchedule.getTarget());
-                    JobParameters jobParameters = new JobParametersBuilder()
-                    		.addString("batchNum", Integer.toString(batchSchedule.getBatchNum()))
-                    		.addString("batchName", batchSchedule.getBatchName())
-                            .addString("url", batchSchedule.getUrl())
-                            .addString("target", batchSchedule.getTarget())
-                            .addString("totalSelector", batchSchedule.getTotalSelector())
-                            .addString("titleSelector1", batchSchedule.getTitleSelector1())
-                            .addString("titleSelector2", batchSchedule.getTitleSelector2())
-                            .addString("titleSelector3", batchSchedule.getTitleSelector3())
-                            .addString("titleLocation", Integer.toString(batchSchedule.getTitleLocation() != null? batchSchedule.getTitleLocation() : 0))
-                            .addString("priceSelector1", batchSchedule.getPriceSelector1())
-                            .addString("priceSelector2", batchSchedule.getPriceSelector2())
-                            .addString("priceSelector3", batchSchedule.getPriceSelector3())
-                            .addString("priceLocation", Integer.toString(batchSchedule.getPriceLocation() != null? batchSchedule.getPriceLocation() : 0))
-                            .addString("deliveryFeeSelector1", batchSchedule.getDeliveryFeeSelector1())
-                            .addString("deliveryFeeSelector2", batchSchedule.getDeliveryFeeSelector2())
-                            .addString("deliveryFeeSelector3", batchSchedule.getDeliveryFeeSelector3())
-                            .addString("deliveryFeeSelector4", batchSchedule.getDeliveryFeeSelector4())
-                            .addString("deliveryFeeLocation", Integer.toString(batchSchedule.getDeliveryFeeLocation() != null? batchSchedule.getDeliveryFeeLocation() : 0))
-                            .addString("sellerSelector1", batchSchedule.getSellerSelector1())
-                            .addString("sellerSelector2", batchSchedule.getSellerSelector2())
-                            .addString("sellerSelector3", batchSchedule.getSellerSelector3())
-                            .addString("sellerLocation", Integer.toString(batchSchedule.getSellerLocation() != null? batchSchedule.getSellerLocation() : 0))
-                            .addString("urlSelector1", batchSchedule.getUrlSelector1())
-                            .addString("urlSelector2", batchSchedule.getUrlSelector2())
-                            .addString("urlSelector3", batchSchedule.getUrlSelector3())
-                            .addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
-                            .addString("imageSelector", batchSchedule.getImageSelector())
-                            // 추후 Slack에 보낼 계정 이름
-                            .addString("account",  account)
-                            // 추후 모든 job이 완료되었는지를 판별할 때 사용할 전체 job 개수
-                            .addLong("jobCount", (long) batchSchedules.size())
-                            // 각 job을 구별할 구분자
-                            .addLong("time", System.currentTimeMillis())
-                            .toJobParameters();
-                    try {
-	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
-                    } catch(Exception e) {
-                    	e.printStackTrace();
-                    	// 오류 발생시 SpringApplication 종료
-                    	SpringApplication.exit(context);
-                    }
-                }
-            });
-        }
+//		if (args.length > 0) {
+//            account = args[0];
+//            startBatchNum = Integer.parseInt(args[1]);
+//            endBatchNum = Integer.parseInt(args[2]);
+//        }
+//		
+//		// 삭제로직 (is_deleted = 1인 데이터)
+//		deleteDocumentsByQuery(client);
+//        client.close();
+//        // MYSQL은 DELETE 속도가 너무 느려서 주석처리
+//		// goodsService.deleteGoodsList();
+//		
+//        // 전체 배치대상 검색어리스트 가져온 후
+//		List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList(startBatchNum, endBatchNum);
+//		
+//		int numThreads = Math.min(MAX_THREADS, batchSchedules.size());
+//
+//		// 모든 계정의 job이 시작되었음을 DB에 적재 (추후 모든 job 종료판별 시 사용)
+//		JobStatus jobStatus = new JobStatus();
+//		jobStatus.setBatchId(Integer.parseInt(account));
+//		jobStatusService.startJobStatus(jobStatus);
+//		
+//        for (int i = 0; i < numThreads; i++) {
+//        	List<BatchSchedule> subList = new ArrayList<BatchSchedule>();
+//        	
+//        	// 각 쓰레드에 분배한 후
+//        	for(int j = i; j < batchSchedules.size(); j += MAX_THREADS) {
+//        		subList.add(batchSchedules.get(j));
+//        	}
+//
+//            taskExecutor.execute(() -> {
+//            	// 각 쓰레드에 할당된 배치대상 검색어 리스트를 가지고 jobLauncher Run
+//            	for (BatchSchedule batchSchedule : subList) {
+//                	log.get().info("batchSchedules : " + batchSchedule.getTarget());
+//                    JobParameters jobParameters = new JobParametersBuilder()
+//                    		.addString("batchNum", Integer.toString(batchSchedule.getBatchNum()))
+//                    		.addString("batchName", batchSchedule.getBatchName())
+//                            .addString("url", batchSchedule.getUrl())
+//                            .addString("target", batchSchedule.getTarget())
+//                            .addString("totalSelector", batchSchedule.getTotalSelector())
+//                            .addString("titleSelector1", batchSchedule.getTitleSelector1())
+//                            .addString("titleSelector2", batchSchedule.getTitleSelector2())
+//                            .addString("titleSelector3", batchSchedule.getTitleSelector3())
+//                            .addString("titleLocation", Integer.toString(batchSchedule.getTitleLocation() != null? batchSchedule.getTitleLocation() : 0))
+//                            .addString("priceSelector1", batchSchedule.getPriceSelector1())
+//                            .addString("priceSelector2", batchSchedule.getPriceSelector2())
+//                            .addString("priceSelector3", batchSchedule.getPriceSelector3())
+//                            .addString("priceLocation", Integer.toString(batchSchedule.getPriceLocation() != null? batchSchedule.getPriceLocation() : 0))
+//                            .addString("deliveryFeeSelector1", batchSchedule.getDeliveryFeeSelector1())
+//                            .addString("deliveryFeeSelector2", batchSchedule.getDeliveryFeeSelector2())
+//                            .addString("deliveryFeeSelector3", batchSchedule.getDeliveryFeeSelector3())
+//                            .addString("deliveryFeeSelector4", batchSchedule.getDeliveryFeeSelector4())
+//                            .addString("deliveryFeeLocation", Integer.toString(batchSchedule.getDeliveryFeeLocation() != null? batchSchedule.getDeliveryFeeLocation() : 0))
+//                            .addString("sellerSelector1", batchSchedule.getSellerSelector1())
+//                            .addString("sellerSelector2", batchSchedule.getSellerSelector2())
+//                            .addString("sellerSelector3", batchSchedule.getSellerSelector3())
+//                            .addString("sellerLocation", Integer.toString(batchSchedule.getSellerLocation() != null? batchSchedule.getSellerLocation() : 0))
+//                            .addString("urlSelector1", batchSchedule.getUrlSelector1())
+//                            .addString("urlSelector2", batchSchedule.getUrlSelector2())
+//                            .addString("urlSelector3", batchSchedule.getUrlSelector3())
+//                            .addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
+//                            .addString("imageSelector", batchSchedule.getImageSelector())
+//                            // 추후 Slack에 보낼 계정 이름
+//                            .addString("account",  account)
+//                            // 추후 모든 job이 완료되었는지를 판별할 때 사용할 전체 job 개수
+//                            .addLong("jobCount", (long) batchSchedules.size())
+//                            // 각 job을 구별할 구분자
+//                            .addLong("time", System.currentTimeMillis())
+//                            .toJobParameters();
+//                    try {
+//	                    jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
+//                    } catch(Exception e) {
+//                    	e.printStackTrace();
+//                    	// 오류 발생시 SpringApplication 종료
+//                    	SpringApplication.exit(context);
+//                    }
+//                }
+//            });
+//        }
 	  }
 	
 	// ES 삭제로직

@@ -10,6 +10,7 @@ import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import com.example.batch.Domain.Goods;
 import com.example.batch.chunk.DataProcessor;
@@ -29,8 +30,10 @@ public class SimpleJobConfiguration {
 	@Autowired
 	private JobCompletionNotificationListener jobCompletionNotificationListener;
 	@Autowired
+	@Qualifier(value = "mainJobLauncher")
 	JobLauncher jobLauncher;
 	@Autowired
+	@Qualifier(value = "mainJobRepository")
 	JobRepository jobRepository;
 	@Autowired
 	WebCrawlingReader webCrawlingReader;

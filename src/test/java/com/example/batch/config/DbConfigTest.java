@@ -17,8 +17,8 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 @Configuration
-@MapperScan(value = "com.example.batch", sqlSessionFactoryRef = "mainSqlSessionFactory")
-public class DbConfig {
+@MapperScan(value = "com.example.batch", sqlSessionFactoryRef = "testSqlSessionFactory")
+public class DbConfigTest {
 	
     @Value("${spring.datasource.mapper-locations}")
     String mPath;
@@ -27,20 +27,20 @@ public class DbConfig {
     @Value("${mybatis.config-location}")
     String mybatisConfigPath;
 
-    @Bean(name = "mainHikariConfig")
+    @Bean(name = "testHikariConfig")
     @ConfigurationProperties(prefix = "spring.datasource")
     public HikariConfig hikariConfig() {
         return new HikariConfig();
     }
 
-    @Bean(name = "mainDataSource")
+    @Bean(name = "testDataSource")
     public DataSource DataSource() {
         DataSource dataSource = new HikariDataSource(hikariConfig());
         return dataSource;
     }
 
 
-    @Bean(name = "mainSqlSessionFactory")
+    @Bean(name = "testSqlSessionFactory")
     public SqlSessionFactory SqlSessionFactory(@Qualifier("dataSource") DataSource DataSource, ApplicationContext applicationContext) throws Exception {
         SqlSessionFactoryBean sqlSessionFactoryBean = new SqlSessionFactoryBean();
         sqlSessionFactoryBean.setDataSource(DataSource);
@@ -49,7 +49,7 @@ public class DbConfig {
         return sqlSessionFactoryBean.getObject();
     }
 
-    @Bean(name = "mainSessionTemplate")
+    @Bean(name = "testSessionTemplate")
     public SqlSessionTemplate SqlSessionTemplate(@Qualifier("SqlSessionFactory") SqlSessionFactory firstSqlSessionFactory) {
         return new SqlSessionTemplate(firstSqlSessionFactory);
     }
@@ -57,7 +57,7 @@ public class DbConfig {
     /**
      * transaction manager
      */
-    @Bean(name= "mainTxManager")
+    @Bean(name= "testTxManager")
     // 트랜잭션 관리
     public PlatformTransactionManager txManager(@Qualifier("dataSource") DataSource dataSource) {
         DataSourceTransactionManager dataSourceTransactionManager = new DataSourceTransactionManager(dataSource);
