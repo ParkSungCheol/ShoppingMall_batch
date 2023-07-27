@@ -9,10 +9,12 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.job.flow.FlowExecutionStatus;
 import org.springframework.batch.core.job.flow.JobExecutionDecider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import com.example.batch.Service.SlackService;
 
 @Component
+@Profile("main")
 public class TimeoutDecider implements JobExecutionDecider {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());

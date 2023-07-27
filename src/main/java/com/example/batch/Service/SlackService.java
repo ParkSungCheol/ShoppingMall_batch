@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import net.gpedro.integrations.slack.SlackApi;
 import net.gpedro.integrations.slack.SlackAttachment;
@@ -13,6 +15,7 @@ import net.gpedro.integrations.slack.SlackField;
 import net.gpedro.integrations.slack.SlackMessage;
 
 @Component
+@Profile("main")
 public class SlackService {
 	
     private SlackApi slackApi;

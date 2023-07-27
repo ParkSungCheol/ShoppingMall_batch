@@ -1,21 +1,27 @@
 package com.example.batch;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleServiceTest;
 
 class BatchUnitTests {
 
-	static int jobCount = -1;
-	static boolean isClosed = false;
+	private Logger log = LoggerFactory.getLogger(this.getClass());
 	
 	@Test
-	void shutdownAll() {
+	void shutdownAll() throws InterruptedException {
 		
 		// given
 		
@@ -35,10 +41,8 @@ class BatchUnitTests {
 		
         // when
         
-        // jobCount 초기화
-        if(jobCount == -1) {
-    		jobCount = batchSchedules.size();
-    	}
+        // CountDown
+        CountDownLatch latch = new CountDownLatch(batchSchedules.size());
         
 		for (int i = 0; i < numThreads; i++) {
         	List<BatchSchedule> subList = new ArrayList<BatchSchedule>();
@@ -53,36 +57,36 @@ class BatchUnitTests {
             	for (BatchSchedule batchSchedule : subList) {
                     try {
 	                    Thread.sleep(1000);
-	                    jobCount--;
+	                    latch.countDown();
                     } catch(Exception e) {
                     	e.printStackTrace();
                     }
                 }
-            	
-            	// 모든 job이 완료되었다면
-            	if(jobCount == 0) {
-            		
-            		// ThreadPoolTaskExecutor 종료 요청
-            		taskExecutor.shutdown();
-
-            		// 모든 스레드가 종료될 때까지 대기
-            		ExecutorService executorService = taskExecutor.getThreadPoolExecutor();
-            		executorService.shutdown();
-            		try {
-            		    if (!executorService.awaitTermination(20, TimeUnit.MINUTES)) {
-            		        // 만약 20분 이내에 스레드들이 종료되지 않으면 강제 종료
-            		        executorService.shutdownNow();
-            		    }
-            		} catch (InterruptedException e) {
-            		    executorService.shutdownNow();
-            		    Thread.currentThread().interrupt();
-            		}
-
-            		isClosed = true;
-
-            	}
             });
 		}
+		
+		// 모든 쓰레드가 완료될 때까지 대기
+        latch.await();
+        
+        // 모든 job이 완료되었다면
+        // ThreadPoolTaskExecutor 종료 요청
+		taskExecutor.shutdown();
+
+		// 모든 스레드가 종료될 때까지 대기
+		ExecutorService executorService = taskExecutor.getThreadPoolExecutor();
+		executorService.shutdown();
+		try {
+		    if (!executorService.awaitTermination(20, TimeUnit.MINUTES)) {
+		        // 만약 20분 이내에 스레드들이 종료되지 않으면 강제 종료
+		        executorService.shutdownNow();
+		    }
+		} catch (InterruptedException e) {
+		    executorService.shutdownNow();
+		    Thread.currentThread().interrupt();
+		}
+
+		assertEquals(taskExecutor.getActiveCount(), 0);
+		log.info("Unit Test is Ended");
 	}
 
 }

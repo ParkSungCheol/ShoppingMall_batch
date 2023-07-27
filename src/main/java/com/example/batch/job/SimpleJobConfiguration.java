@@ -12,6 +12,8 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+
 import com.example.batch.Domain.Goods;
 import com.example.batch.chunk.DataProcessor;
 import com.example.batch.chunk.MyBatisItemWriter;
@@ -21,6 +23,7 @@ import com.example.batch.config.TimeoutDecider;
 
 @Configuration
 @EnableBatchProcessing
+@Profile("main")
 public class SimpleJobConfiguration {
 
 	@Autowired

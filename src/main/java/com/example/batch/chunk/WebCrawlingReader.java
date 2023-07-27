@@ -24,6 +24,7 @@ import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;
 import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
@@ -36,6 +37,7 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.Unmarshaller;
 
 @Component
+@Profile("main")
 public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecutionListener {
 
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.Mapper.BatchScheduleMapper">
+
+    <select id="getBatchScheduleList" resultType="com.example.batch.Domain.BatchSchedule">
+        SELECT 
+			SC.BATCH_NUM AS batch_num
+		,	SC.BATCH_NAME AS batch_name
+		,	SC.TARGET AS target
+		,	CONCAT(SI.URL,SC.TARGET) AS url
+		,	SI.TOTAL_SELECTOR AS total_selector
+		,	SI.TITLE_SELECTOR_1 AS title_selector_1
+		,	SI.TITLE_SELECTOR_2 AS title_selector_2
+		,	SI.TITLE_SELECTOR_3 AS title_selector_3
+		,	SI.TITLE_LOCATION AS title_location
+		, 	SI.PRICE_SELECTOR_1 AS price_selector_1
+		,	SI.PRICE_SELECTOR_2 AS price_selector_2
+		,	SI.PRICE_SELECTOR_3 AS price_selector_3
+		,	SI.PRICE_LOCATION AS price_location
+		,	SI.DELIVERY_FEE_SELECTOR_1 AS delivery_fee_selector_1
+		,	SI.DELIVERY_FEE_SELECTOR_2 AS delivery_fee_selector_2
+		,	SI.DELIVERY_FEE_SELECTOR_3 AS delivery_fee_selector_3
+		,	SI.DELIVERY_FEE_SELECTOR_4 AS delivery_fee_selector_4
+		,	SI.DELIVERY_FEE_LOCATION AS delivery_fee_location
+		,	SI.SELLER_SELECTOR_1 AS seller_selector_1
+		,	SI.SELLER_SELECTOR_2 AS seller_selector_2
+		,	SI.SELLER_SELECTOR_3 AS seller_selector_3
+		,	SI.SELLER_LOCATION AS seller_location
+		,	SI.URL_SELECTOR_1 AS url_selector_1
+		,	SI.URL_SELECTOR_2 AS url_selector_2
+		,	SI.URL_SELECTOR_3 AS url_selector_3
+		,	SI.NEXT_BUTTON_SELECTOR AS next_button_selector
+		,   SI.IMAGE_SELECTOR AS image_selector
+		FROM (
+			SELECT *
+			FROM BATCH_SCHEDULE
+			WHERE BATCH_NUM BETWEEN #{startBatchNum} AND #{endBatchNum}
+			) SC
+		INNER JOIN BATCH_SITE SI
+		ON SC.BATCH_NAME = SI.BATCH_NAME
+		ORDER BY SC.BATCH_NUM
+    </select>
+</mapper>

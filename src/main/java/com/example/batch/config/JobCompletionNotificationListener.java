@@ -20,6 +20,7 @@ import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,7 @@ import com.example.batch.Service.SearchService;
 import com.example.batch.Service.SlackService;
 
 @Component
+@Profile("main")
 public class JobCompletionNotificationListener implements JobExecutionListener {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());

@@ -7,6 +7,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -19,6 +20,7 @@ import com.example.batch.Domain.Search;
 import com.example.batch.Domain.esGoods;
 
 @Service
+@Profile("main")
 public class ElasticsearchService {
     private final ElasticsearchOperations elasticsearchOperations;
     private Logger logger = LoggerFactory.getLogger(this.getClass());

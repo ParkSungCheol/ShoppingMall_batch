@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.Mapper.JobStatusMapper">
+
+	<select id="selectPJobStatus" resultType="com.example.batch.Domain.JobStatus">
+        SELECT
+            batchId
+			, status
+			, startTime
+			, endTime
+        FROM
+            BATCH_JOB_STATUS
+		WHERE status = 'P'
+    </select>
+    
+    <update id="startJobStatus" parameterType="com.example.batch.Domain.JobStatus">
+        INSERT INTO BATCH_JOB_STATUS
+		VALUES(
+			#{jobStatus.batchId},
+			'P',
+			SYSDATE(),
+			NULL
+			) 
+		ON DUPLICATE KEY UPDATE
+		status = 'P', startTime = SYSDATE(), endTime = NULL
+    </update>
+    
+    <update id="endJobStatus" parameterType="com.example.batch.Domain.JobStatus">
+        INSERT INTO BATCH_JOB_STATUS
+		VALUES(
+			#{jobStatus.batchId},
+			'E',
+			NULL,
+			SYSDATE()
+			) 
+		ON DUPLICATE KEY UPDATE
+		status = 'E', endTime = SYSDATE()
+    </update>
+</mapper>

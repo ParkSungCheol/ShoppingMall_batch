@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.batch.Mapper.GoodsMapper">
+
+    <insert id="insertGoodsList" parameterType="java.util.List" >
+	    INSERT INTO goods(
+	        name
+			, price
+			, amount
+			, discountamount
+			, discountrate
+			, deliveryfee
+			, sellid
+			, image
+			, detail
+			, product_code
+			, insertion_date
+	    ) VALUES 
+	    <foreach collection="goodsList" item="Goods" separator=",">
+	    (
+	          #{Goods.name}
+	        , #{Goods.price}
+	        , NULL
+	        , NULL
+	        , NULL
+	        , #{Goods.deliveryfee}
+	        , #{Goods.sellid}
+	        , #{Goods.image}
+	        , #{Goods.detail}
+	        , #{Goods.product_code}
+	        , #{Goods.insertion_date}
+	    )
+	    </foreach>
+	    ON DUPLICATE KEY UPDATE
+	    name = values(name),
+	    price = values(price),
+	    deliveryfee = values(deliveryfee),
+	    sellid = values(sellid),
+	    image = values(image),
+	    detail = values(detail)
+	</insert>
+	
+	<delete id="deleteGoodsList">
+		DELETE FROM goods WHERE is_deleted = 1;
+	</delete>
+</mapper>

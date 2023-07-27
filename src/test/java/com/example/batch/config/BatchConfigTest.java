@@ -2,6 +2,8 @@ package com.example.batch.config;
 
 import javax.sql.DataSource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.configuration.annotation.BatchConfigurer;
 import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.explore.support.JobExplorerFactoryBean;
@@ -11,18 +13,22 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
+@Profile("test") // test 프로파일에서만 사용
 public class BatchConfigTest implements BatchConfigurer {
 
 	private final DataSource dataSource;
 	private TaskExecutor taskExecutor;
+	private Logger log = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired
 	public BatchConfigTest(@Qualifier(value = "testDataSource") DataSource dataSource) {
@@ -30,11 +36,11 @@ public class BatchConfigTest implements BatchConfigurer {
     }
 	
     @Bean(name = "testTaskExecutor")
-    public TaskExecutor taskExecutor() {
+    public ThreadPoolTaskExecutor taskExecutor() {
         ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         // 4개의 쓰레드 사용
-        taskExecutor.setCorePoolSize(1);
-        taskExecutor.setMaxPoolSize(1);
+        taskExecutor.setCorePoolSize(4);
+        taskExecutor.setMaxPoolSize(4);
         taskExecutor.setThreadNamePrefix("batch-thread-");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(false);
         taskExecutor.setAwaitTerminationSeconds(600);
@@ -70,7 +76,7 @@ public class BatchConfigTest implements BatchConfigurer {
 		SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
         jobLauncher.setJobRepository(getJobRepository());
         // 다중쓰레드 설정
-        jobLauncher.setTaskExecutor(taskExecutor);
+//        jobLauncher.setTaskExecutor(taskExecutor);
         jobLauncher.afterPropertiesSet();
         return jobLauncher;
 	}

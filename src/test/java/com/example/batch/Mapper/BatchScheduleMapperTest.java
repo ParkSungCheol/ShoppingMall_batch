@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Param;
+import org.springframework.context.annotation.Profile;
 
 import com.example.batch.Domain.BatchSchedule;
 
+@Profile("test") // test 프로파일에서만 사용
 public class BatchScheduleMapperTest {
 
     public List<BatchSchedule> getBatchScheduleList(@Param("startBatchNum") int startBatchNum,@Param("endBatchNum") int endBatchNum) {

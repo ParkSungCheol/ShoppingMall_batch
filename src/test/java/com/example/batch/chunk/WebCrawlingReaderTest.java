@@ -1,7 +1,6 @@
 package com.example.batch.chunk;
 
 import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.ExitStatus;
@@ -10,24 +9,25 @@ import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.NonTransientResourceException;
-import org.springframework.batch.item.ParseException;
-import org.springframework.batch.item.UnexpectedInputException;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.Goods;
 
 @Component
+@Profile("test") // test 프로파일에서만 사용
 public class WebCrawlingReaderTest implements ItemReader<List<Goods>>, StepExecutionListener {
 
     private static final ThreadLocal<BatchSchedule> batchSchedule = new ThreadLocal<>();
     private static final ThreadLocal<JobExecution> jobExecution = new ThreadLocal<>();
     private static final ThreadLocal<StepExecution> stepEx = new ThreadLocal<>();
-    private Logger log = LoggerFactory.getLogger(this.getClass());
+    private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
+    	return LoggerFactory.getLogger(this.getClass());
+    });
     
 	@Override
-	public List<Goods> read() throws Exception, UnexpectedInputException, ParseException, NonTransientResourceException {
-		log.info("############ BatchName : {} ##############", batchSchedule.get().getBatchName());
+	public List<Goods> read(){
+		log.get().info("############ BatchName : {} ##############", batchSchedule.get().getBatchName());
 		return null;
 	}
 
