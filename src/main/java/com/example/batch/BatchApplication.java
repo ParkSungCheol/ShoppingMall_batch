@@ -17,8 +17,8 @@ public class BatchApplication implements CommandLineRunner {
 	
 	public static void main(String[] args) throws IOException {
 		context = SpringApplication.run(BatchApplication.class, args);
-//		MainBatch mainBatch = new MainBatch(context);
-//		mainBatch.execute(args);
+		MainBatch mainBatch = new MainBatch(context);
+		mainBatch.execute(args);
 	}
 	
 	@Override
