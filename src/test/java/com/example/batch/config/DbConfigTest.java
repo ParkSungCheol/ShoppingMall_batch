@@ -5,6 +5,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -25,6 +26,17 @@ public class DbConfigTest {
 	
     @Value("${spring.datasource.mapper-locations}")
     String mPath;
+    
+    @Value("${spring.datasource.driver-class-name}")
+    String driverClassName;
+    @Value("${spring.datasource.url}")
+    String url;
+    @Value("${spring.datasource.jdbc-url}")
+    String jdbcUrl;
+    @Value("${spring.datasource.username}")
+    String username;
+    @Value("${spring.datasource.password}")
+    String password;
 
     // mybatis 설정 파일을 따로 작성해서 임포트할 예정 - snake_case -> camelCase 를 위함
     @Value("${mybatis.config-location}")
@@ -33,12 +45,17 @@ public class DbConfigTest {
     @Bean(name = "testHikariConfig")
     @ConfigurationProperties(prefix = "spring.datasource")
     public HikariConfig hikariConfig() {
-        return new HikariConfig();
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(jdbcUrl);
+        config.setUsername(username);
+        config.setPassword(password);
+        config.setDriverClassName(driverClassName);
+        return config;
     }
 
     @Bean(name = "testDataSource")
-    public DataSource DataSource() {
-        DataSource dataSource = new HikariDataSource(hikariConfig());
+    public DataSource DataSource(@Autowired HikariConfig hikariConfig) {
+        DataSource dataSource = new HikariDataSource(hikariConfig);
         return dataSource;
     }
 

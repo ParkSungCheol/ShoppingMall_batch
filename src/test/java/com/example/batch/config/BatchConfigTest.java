@@ -41,6 +41,7 @@ public class BatchConfigTest implements BatchConfigurer {
         // 4개의 쓰레드 사용
         taskExecutor.setCorePoolSize(4);
         taskExecutor.setMaxPoolSize(4);
+        taskExecutor.setDaemon(false); // 데몬 스레드가 아닌 일반 스레드로 설정
         taskExecutor.setThreadNamePrefix("batch-thread-");
         taskExecutor.setWaitForTasksToCompleteOnShutdown(false);
         taskExecutor.setAwaitTerminationSeconds(600);
@@ -76,7 +77,7 @@ public class BatchConfigTest implements BatchConfigurer {
 		SimpleJobLauncher jobLauncher = new SimpleJobLauncher();
         jobLauncher.setJobRepository(getJobRepository());
         // 다중쓰레드 설정
-//        jobLauncher.setTaskExecutor(taskExecutor);
+        jobLauncher.setTaskExecutor(taskExecutor);
         jobLauncher.afterPropertiesSet();
         return jobLauncher;
 	}

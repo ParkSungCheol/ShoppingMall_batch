@@ -1,18 +1,15 @@
 package com.example.batch;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleServiceTest;
 
@@ -23,13 +20,12 @@ class BatchUnitTests {
 	@Test
 	void shutdownAll() throws InterruptedException {
 		
-		// given
-		
+		// [ given ]
 		int MAX_THREADS = 4;
 		BatchScheduleServiceTest service = new BatchScheduleServiceTest();
 		// 전체 배치대상 검색어리스트 가져온 후
-		List<BatchSchedule> batchSchedules = service.getBatchScheduleList(0, 0);
-		int numThreads = Math.min(MAX_THREADS, batchSchedules.size());
+		List<BatchSchedule> BatchSchedules = service.getBatchScheduleList(0, 0);
+		int numThreads = Math.min(MAX_THREADS, BatchSchedules.size());
 		ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
         // 4개의 쓰레드 사용
         taskExecutor.setCorePoolSize(4);
@@ -38,24 +34,24 @@ class BatchUnitTests {
         taskExecutor.setWaitForTasksToCompleteOnShutdown(false);
         taskExecutor.setAwaitTerminationSeconds(600);
         taskExecutor.initialize();
-		
-        // when
-        
         // CountDown
-        CountDownLatch latch = new CountDownLatch(batchSchedules.size());
-        
+        CountDownLatch latch = new CountDownLatch(BatchSchedules.size());
+		
+        // [ when ]
 		for (int i = 0; i < numThreads; i++) {
         	List<BatchSchedule> subList = new ArrayList<BatchSchedule>();
         	
         	// 각 쓰레드에 분배한 후
-        	for(int j = i; j < batchSchedules.size(); j += MAX_THREADS) {
-        		subList.add(batchSchedules.get(j));
+        	for(int j = i; j < BatchSchedules.size(); j += MAX_THREADS) {
+        		subList.add(BatchSchedules.get(j));
         	}
 
             taskExecutor.execute(() -> {
             	// 각 쓰레드에 할당된 배치대상 검색어 리스트를 가지고 jobLauncher Run
-            	for (BatchSchedule batchSchedule : subList) {
+            	for (BatchSchedule BatchSchedule : subList) {
                     try {
+                    	log.info("###### BatchIntegrationTests BatchSchedules.size() : {} #######", BatchSchedules.size());
+                		log.info("###### BatchIntegrationTests batchName : {} #######", BatchSchedule.getBatchName());
 	                    Thread.sleep(1000);
 	                    latch.countDown();
                     } catch(Exception e) {
@@ -64,13 +60,12 @@ class BatchUnitTests {
                 }
             });
 		}
-		
 		// 모든 쓰레드가 완료될 때까지 대기
         latch.await();
         
         // 모든 job이 완료되었다면
         // ThreadPoolTaskExecutor 종료 요청
-		taskExecutor.shutdown();
+        taskExecutor.shutdown();
 
 		// 모든 스레드가 종료될 때까지 대기
 		ExecutorService executorService = taskExecutor.getThreadPoolExecutor();
@@ -85,7 +80,9 @@ class BatchUnitTests {
 		    Thread.currentThread().interrupt();
 		}
 
+		// [ then ]
 		assertEquals(taskExecutor.getActiveCount(), 0);
+		
 		log.info("Unit Test is Ended");
 	}
 

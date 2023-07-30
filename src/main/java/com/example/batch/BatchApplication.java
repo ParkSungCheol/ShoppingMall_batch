@@ -19,6 +19,10 @@ public class BatchApplication implements CommandLineRunner {
 		context = SpringApplication.run(BatchApplication.class, args);
 		MainBatch mainBatch = new MainBatch(context);
 		mainBatch.execute(args);
+		
+		// 애플리케이션 종료
+	    context.close();
+	    System.exit(0);
 	}
 	
 	@Override

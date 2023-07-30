@@ -1,8 +1,9 @@
 package com.example.batch;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -20,13 +21,14 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.boot.SpringApplication;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Domain.JobStatus;
 import com.example.batch.Service.BatchScheduleService;
@@ -37,14 +39,14 @@ import com.example.batch.job.SimpleJobConfiguration;
 public class MainBatch {
 	private JobLauncher jobLauncher;
 	private SimpleJobConfiguration simpleJobConfiguration;
-	private TaskExecutor taskExecutor;
+	private ThreadPoolTaskExecutor taskExecutor;
 	private JobStatusService jobStatusService;
 	private RestHighLevelClient client;
 	private BatchScheduleService batchScheduleService;
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
 		return LoggerFactory.getLogger(this.getClass());
 	});
-	private static ApplicationContext context;
+	private static ConfigurableApplicationContext context;
 	private static String account;
 	private static int startBatchNum;
 	private static int endBatchNum;
@@ -55,12 +57,12 @@ public class MainBatch {
 	// 다중쓰레드 수
 	private static final int MAX_THREADS = 4;
 	
-	public MainBatch(ApplicationContext givenContext) {
+	public MainBatch(ConfigurableApplicationContext givenContext) {
 		// TODO Auto-generated constructor stub
 		context = givenContext;
 		jobLauncher = context.getBean("mainJobLauncher", JobLauncher.class);
 		simpleJobConfiguration = context.getBean(SimpleJobConfiguration.class);
-		taskExecutor = context.getBean("mainTaskExecutor", TaskExecutor.class);
+		taskExecutor = context.getBean("mainTaskExecutor", ThreadPoolTaskExecutor.class);
 		jobStatusService = context.getBean(JobStatusService.class);
 		client = context.getBean(RestHighLevelClient.class);
 		batchScheduleService = context.getBean(BatchScheduleService.class);
@@ -83,73 +85,89 @@ public class MainBatch {
 		// 전체 배치대상 검색어리스트 가져온 후
 		List<BatchSchedule> batchSchedules = batchScheduleService.getBatchScheduleList(startBatchNum, endBatchNum);
 
-		int numThreads = Math.min(MAX_THREADS, batchSchedules.size());
-
 		// 모든 계정의 job이 시작되었음을 DB에 적재 (추후 모든 job 종료판별 시 사용)
 		JobStatus jobStatus = new JobStatus();
 		jobStatus.setBatchId(Integer.parseInt(account));
 		jobStatusService.startJobStatus(jobStatus);
 
-		for (int i = 0; i < numThreads; i++) {
-			List<BatchSchedule> subList = new ArrayList<BatchSchedule>();
-
-			// 각 쓰레드에 분배한 후
-			for (int j = i; j < batchSchedules.size(); j += MAX_THREADS) {
-				subList.add(batchSchedules.get(j));
+		for (int i = 0; i < batchSchedules.size(); i++) {
+    		
+			BatchSchedule batchSchedule = batchSchedules.get(i);
+    		
+			log.get().info("batchSchedules : " + batchSchedule.getTarget());
+			JobParameters jobParameters = new JobParametersBuilder()
+					.addString("batchNum", Integer.toString(batchSchedule.getBatchNum()))
+					.addString("batchName", batchSchedule.getBatchName())
+					.addString("url", batchSchedule.getUrl()).addString("target", batchSchedule.getTarget())
+					.addString("totalSelector", batchSchedule.getTotalSelector())
+					.addString("titleSelector1", batchSchedule.getTitleSelector1())
+					.addString("titleSelector2", batchSchedule.getTitleSelector2())
+					.addString("titleSelector3", batchSchedule.getTitleSelector3())
+					.addString("titleLocation", Integer.toString(
+							batchSchedule.getTitleLocation() != null ? batchSchedule.getTitleLocation() : 0))
+					.addString("priceSelector1", batchSchedule.getPriceSelector1())
+					.addString("priceSelector2", batchSchedule.getPriceSelector2())
+					.addString("priceSelector3", batchSchedule.getPriceSelector3())
+					.addString("priceLocation", Integer.toString(
+							batchSchedule.getPriceLocation() != null ? batchSchedule.getPriceLocation() : 0))
+					.addString("deliveryFeeSelector1", batchSchedule.getDeliveryFeeSelector1())
+					.addString("deliveryFeeSelector2", batchSchedule.getDeliveryFeeSelector2())
+					.addString("deliveryFeeSelector3", batchSchedule.getDeliveryFeeSelector3())
+					.addString("deliveryFeeSelector4", batchSchedule.getDeliveryFeeSelector4())
+					.addString("deliveryFeeLocation",
+							Integer.toString(batchSchedule.getDeliveryFeeLocation() != null
+									? batchSchedule.getDeliveryFeeLocation()
+									: 0))
+					.addString("sellerSelector1", batchSchedule.getSellerSelector1())
+					.addString("sellerSelector2", batchSchedule.getSellerSelector2())
+					.addString("sellerSelector3", batchSchedule.getSellerSelector3())
+					.addString("sellerLocation", Integer.toString(
+							batchSchedule.getSellerLocation() != null ? batchSchedule.getSellerLocation() : 0))
+					.addString("urlSelector1", batchSchedule.getUrlSelector1())
+					.addString("urlSelector2", batchSchedule.getUrlSelector2())
+					.addString("urlSelector3", batchSchedule.getUrlSelector3())
+					.addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
+					.addString("imageSelector", batchSchedule.getImageSelector())
+					// 추후 Slack에 보낼 계정 이름
+					.addString("account", account)
+					// 추후 모든 job이 완료되었는지를 판별할 때 사용할 전체 job 개수
+					.addLong("jobCount", (long) batchSchedules.size())
+					// 각 job을 구별할 구분자
+					.addLong("time", System.currentTimeMillis()).toJobParameters();
+			try {
+				JobExecution execution = jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
+				Thread.currentThread().sleep(90000);
+				while(i == batchSchedules.size() - 1 || (i+1) % MAX_THREADS == 0) {
+    				if(execution.getStatus() == BatchStatus.COMPLETED) break;
+    				else {
+    					Thread.sleep(60000);
+    					log.get().info("i : {}", i);
+    					log.get().info("execution.getStatus() : {}", execution.getStatus());
+    				}
+    			}
+			} catch (Exception e) {
+				e.printStackTrace();
+				// 오류 발생시 SpringApplication 종료
+				context.close();
+			    System.exit(0);
 			}
+        }
+		
+		// ThreadPoolTaskExecutor 종료 요청
+		taskExecutor.shutdown();
 
-			taskExecutor.execute(() -> {
-				// 각 쓰레드에 할당된 배치대상 검색어 리스트를 가지고 jobLauncher Run
-				for (BatchSchedule batchSchedule : subList) {
-					log.get().info("batchSchedules : " + batchSchedule.getTarget());
-					JobParameters jobParameters = new JobParametersBuilder()
-							.addString("batchNum", Integer.toString(batchSchedule.getBatchNum()))
-							.addString("batchName", batchSchedule.getBatchName())
-							.addString("url", batchSchedule.getUrl()).addString("target", batchSchedule.getTarget())
-							.addString("totalSelector", batchSchedule.getTotalSelector())
-							.addString("titleSelector1", batchSchedule.getTitleSelector1())
-							.addString("titleSelector2", batchSchedule.getTitleSelector2())
-							.addString("titleSelector3", batchSchedule.getTitleSelector3())
-							.addString("titleLocation", Integer.toString(
-									batchSchedule.getTitleLocation() != null ? batchSchedule.getTitleLocation() : 0))
-							.addString("priceSelector1", batchSchedule.getPriceSelector1())
-							.addString("priceSelector2", batchSchedule.getPriceSelector2())
-							.addString("priceSelector3", batchSchedule.getPriceSelector3())
-							.addString("priceLocation", Integer.toString(
-									batchSchedule.getPriceLocation() != null ? batchSchedule.getPriceLocation() : 0))
-							.addString("deliveryFeeSelector1", batchSchedule.getDeliveryFeeSelector1())
-							.addString("deliveryFeeSelector2", batchSchedule.getDeliveryFeeSelector2())
-							.addString("deliveryFeeSelector3", batchSchedule.getDeliveryFeeSelector3())
-							.addString("deliveryFeeSelector4", batchSchedule.getDeliveryFeeSelector4())
-							.addString("deliveryFeeLocation",
-									Integer.toString(batchSchedule.getDeliveryFeeLocation() != null
-											? batchSchedule.getDeliveryFeeLocation()
-											: 0))
-							.addString("sellerSelector1", batchSchedule.getSellerSelector1())
-							.addString("sellerSelector2", batchSchedule.getSellerSelector2())
-							.addString("sellerSelector3", batchSchedule.getSellerSelector3())
-							.addString("sellerLocation", Integer.toString(
-									batchSchedule.getSellerLocation() != null ? batchSchedule.getSellerLocation() : 0))
-							.addString("urlSelector1", batchSchedule.getUrlSelector1())
-							.addString("urlSelector2", batchSchedule.getUrlSelector2())
-							.addString("urlSelector3", batchSchedule.getUrlSelector3())
-							.addString("nextButtonSelector", batchSchedule.getNextButtonSelector())
-							.addString("imageSelector", batchSchedule.getImageSelector())
-							// 추후 Slack에 보낼 계정 이름
-							.addString("account", account)
-							// 추후 모든 job이 완료되었는지를 판별할 때 사용할 전체 job 개수
-							.addLong("jobCount", (long) batchSchedules.size())
-							// 각 job을 구별할 구분자
-							.addLong("time", System.currentTimeMillis()).toJobParameters();
-					try {
-						jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
-					} catch (Exception e) {
-						e.printStackTrace();
-						// 오류 발생시 SpringApplication 종료
-						SpringApplication.exit(context);
-					}
-				}
-			});
+		// 모든 스레드가 종료될 때까지 대기
+		ExecutorService executorService = taskExecutor.getThreadPoolExecutor();
+		executorService.shutdown();
+		try {
+		    if (!executorService.awaitTermination(20, TimeUnit.MINUTES)) {
+		        // 만약 20분 이내에 스레드들이 종료되지 않으면 강제 종료
+		        executorService.shutdownNow();
+		    }
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		    executorService.shutdownNow();
+		    Thread.currentThread().interrupt();
 		}
 	}
 

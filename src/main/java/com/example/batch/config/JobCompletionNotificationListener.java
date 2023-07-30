@@ -1,7 +1,5 @@
 package com.example.batch.config;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -9,22 +7,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import javax.sql.DataSource;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
-
 import com.example.batch.Domain.JobStatus;
 import com.example.batch.Domain.Search;
 import com.example.batch.Domain.esGoods;
@@ -49,16 +41,14 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 	private SearchService searchService;
 	private ElasticsearchService elasticsearchService;
 	private PhoneService phoneService;
-	private ConfigurableApplicationContext applicationContext;
     
-    public JobCompletionNotificationListener(ConfigurableApplicationContext applicationContext, DataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
+    public JobCompletionNotificationListener(DataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
         this.taskExecutor = taskExecutor;
         this.slackService = slackService;
         this.jobStatusService = jobStatusService;
         this.searchService = searchService;
         this.elasticsearchService = elasticsearchService;
         this.phoneService = phoneService;
-        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -70,12 +60,20 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		jobCount = jobCount_param;
     	}
     }
-
+    
     @Override
     // job 종료 후 호출
     public void afterJob(JobExecution jobExecution){
     	// 남은 jobCount
-    	jobCount--;
+    	synchronized (this) {
+    		try {
+				Thread.currentThread().sleep(60000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    		jobCount--;
+    	}
     	log.info("jobCount : {}", jobCount);
     	
     	// Slack에 보낼 메시지 작성
@@ -175,26 +173,6 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     		finalMsg += "Failed : " + failedCount + "\n";
     		finalMsg += "Successed : " + successedCount;
     		slackService.call(1, finalMsg);
-    		
-    		// ThreadPoolTaskExecutor 종료 요청
-    		tte.shutdown();
-
-    		// 모든 스레드가 종료될 때까지 대기
-    		ExecutorService executorService = tte.getThreadPoolExecutor();
-    		executorService.shutdown();
-    		try {
-    		    if (!executorService.awaitTermination(20, TimeUnit.MINUTES)) {
-    		        // 만약 20분 이내에 스레드들이 종료되지 않으면 강제 종료
-    		        executorService.shutdownNow();
-    		    }
-    		} catch (InterruptedException e) {
-    		    executorService.shutdownNow();
-    		    Thread.currentThread().interrupt();
-    		}
-
-    		// SpringApplication 종료
-    		applicationContext.close();
-
     	}
     }
     

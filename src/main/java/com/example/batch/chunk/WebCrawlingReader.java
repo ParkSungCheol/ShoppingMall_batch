@@ -80,7 +80,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         
         // 제대로 된 응답을 받을 때까지 무한루프
         while(true) {
-        	// API 요청 시 매 요청마다 0.5초의 간격 부여
+        	// API 요청 시 매 요청마다 0.75초의 간격 부여
         	Thread.currentThread().sleep(750);
         	log.get().info("Current PageNumber : " + pageNumber.get());
             // 쿼리를 UTF-8로 인코딩
@@ -140,7 +140,7 @@ public class WebCrawlingReader implements ItemReader<List<Goods>>, StepExecution
         total += productList.size();
         
         for (Product product : productList) {
-        	// API 요청 시 매 요청마다 0.5초의 간격 부여
+        	// API 요청 시 매 요청마다 0.75초의 간격 부여
         	Thread.currentThread().sleep(750);
         	Goods goods = new Goods();
         	

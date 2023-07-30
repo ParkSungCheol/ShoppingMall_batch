@@ -51,46 +51,28 @@ public class JobCompletionNotificationListenerTest implements JobExecutionListen
     // job 종료 후 호출
     public void afterJob(JobExecution jobExecution){
     	// 남은 jobCount
-    	latch.countDown();
+    	synchronized (this) {
+    		try {
+				Thread.currentThread().sleep(6000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    		latch.countDown();
+    	}
     	log.get().info("!!!!!!!!!!!!!jobCount : {}!!!!!!!!!!!!!!!", latch.getCount());
-    	jobExecution.setStatus(BatchStatus.COMPLETED);
+    	
+    	assertEquals(jobExecution.getStatus(), BatchStatus.COMPLETED);
     	
     	// 모든 job이 완료되었다면
-//    	if(latch.getCount() == 0) {
-//    		
-//        	// 모든 쓰레드가 완료될 때까지 대기
-//            try {
-//				latch.await();
-//			} catch (InterruptedException e1) {
-//				// TODO Auto-generated catch block
-//				e1.printStackTrace();
-//			}
-//            
-//            assertEquals(jobExecution.getStatus(), BatchStatus.COMPLETED);
-//            
-//            // 모든 job이 완료되었다면
-//            // ThreadPoolTaskExecutor 종료 요청
-//            taskExecutor.shutdown();
-//
-//    		// 모든 스레드가 종료될 때까지 대기
-//    		ExecutorService executorService = taskExecutor.getThreadPoolExecutor();
-//    		executorService.shutdown();
-//    		try {
-//    		    if (!executorService.awaitTermination(20, TimeUnit.MINUTES)) {
-//    		        // 만약 20분 이내에 스레드들이 종료되지 않으면 강제 종료
-//    		        executorService.shutdownNow();
-//    		    }
-//    		} catch (InterruptedException e) {
-//    		    executorService.shutdownNow();
-//    		    Thread.currentThread().interrupt();
-//    		}
-//
-//    		assertEquals(taskExecutor.getActiveCount(), 0);
-//    		log.get().info("Integration Test is Ended");
-////
-////    		// SpringApplication 종료
-////    		applicationContext.close();
-//
-//    	}
+    	if(latch.getCount() == 0) {
+        	// 모든 쓰레드가 완료될 때까지 대기
+            try {
+				latch.await();
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+    	}
     }
 }
