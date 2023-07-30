@@ -1,5 +1,6 @@
 package com.example.batch.chunk;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +25,31 @@ public class WebCrawlingReaderTest implements ItemReader<List<Goods>>, StepExecu
     private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
     	return LoggerFactory.getLogger(this.getClass());
     });
+    private ThreadLocal<Boolean> executed = ThreadLocal.withInitial(() -> {
+    	return false; // 한 번 실행됐는지를 체크하는 변수
+    });
     
 	@Override
 	public List<Goods> read(){
+		ArrayList<Goods> list = new ArrayList<>();
+		int forNum = 200;
+		if(executed.get() == true) {
+			executed.set(!executed.get());
+			return null;
+		}
+		
 		log.get().info("############ BatchName : {} ##############", BatchSchedule.get().getBatchName());
-		return null;
+		for(int i = 0; i < forNum; i++) {
+			Goods goods = new Goods();
+			goods.setName("IntegrationTest");
+			goods.setPrice(0);
+			goods.setSellid("TEST");
+			goods.setProduct_code("TEST");
+			goods.setInsertion_date("2023-07-30");
+			list.add(goods);
+		}
+		executed.set(!executed.get());
+		return list;
 	}
 
 	@Override
@@ -70,7 +91,6 @@ public class WebCrawlingReaderTest implements ItemReader<List<Goods>>, StepExecu
 	// read 메서드 종료 후 호출
 	public ExitStatus afterStep(StepExecution stepExecution) {
 		ExecutionContext executionContext = stepExecution.getJobExecution().getExecutionContext();
-		executionContext.put("target", BatchSchedule.get().getTarget());
 		return ExitStatus.COMPLETED;
 	}
 }

@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import com.example.batch.Domain.Goods;
 import com.example.batch.chunk.DataProcessorTest;
+import com.example.batch.chunk.MyBatisItemWriterInsertTest;
 import com.example.batch.chunk.MyBatisItemWriterTest;
 import com.example.batch.chunk.WebCrawlingReaderTest;
 import com.example.batch.config.EventHandler;
@@ -45,14 +46,35 @@ public class SimpleJobConfigurationTest {
 	@Autowired
 	DataProcessorTest dataProcessor;
 	@Autowired
-	MyBatisItemWriterTest myBatisItemWriter;
+	MyBatisItemWriterTest myBatisItemWriterNotInsert;
+	@Autowired
+	MyBatisItemWriterInsertTest myBatisItemWriterInsert;
 	@Autowired
 	EventHandler eventHandler;
 
-	@Bean
-    public Job myJob() {
-    	Step step = myStep();
-        return this.jobBuilderFactory.get("myJob")
+	@Bean(name = "jobNotInsert")
+    public Job myJob1() {
+    	Step step = myStep1();
+        return this.jobBuilderFactory.get("jobNotInsert")
+        		// BeforeJob, AfterJob 호출
+        		.listener(jobCompletionNotificationListener)
+        		/* step start */
+        		.start(step)
+//                .on("FAILED").to(eventHandler) // 실패 시 timeoutDecider 호출
+//                .on("COMPLETED").end() // 성공 시 step end
+//                .from(eventHandler)
+//                    .on("COMPLETED").end() // timeoutDecider에서 COMPLETE 발생 시 step end
+//                    .on("*").fail() // timeoutDecider에서 다른 이벤트 발생 시 fail 처리(Job Failed)
+//                .end()
+                /* step end */
+                .incrementer(new RunIdIncrementer()) // job이 중복되지 않도록 id 부여
+                .build();
+    }
+	
+	@Bean(name = "jobInsert")
+    public Job myJob2() {
+    	Step step = myStep2();
+        return this.jobBuilderFactory.get("jobInsert")
         		// BeforeJob, AfterJob 호출
         		.listener(jobCompletionNotificationListener)
         		/* step start */
@@ -68,14 +90,25 @@ public class SimpleJobConfigurationTest {
                 .build();
     }
 
-	@Bean
-    public Step myStep() {
+	@Bean(name = "stepNotInsert")
+    public Step myStep1() {
         return stepBuilderFactory.get("myStep")
         		// chunk 1 단위가 끝날때마다 DB에 SQL push
                 .<List<Goods>, List<Goods>>chunk(1)
                 .reader(webCrawlingReader)
                 .processor(dataProcessor)
-                .writer(myBatisItemWriter)
+                .writer(myBatisItemWriterNotInsert)
+                .build();
+    }
+	
+	@Bean(name = "stepInsert")
+    public Step myStep2() {
+        return stepBuilderFactory.get("myStep")
+        		// chunk 1 단위가 끝날때마다 DB에 SQL push
+                .<List<Goods>, List<Goods>>chunk(1)
+                .reader(webCrawlingReader)
+                .processor(dataProcessor)
+                .writer(myBatisItemWriterInsert)
                 .build();
     }
 }

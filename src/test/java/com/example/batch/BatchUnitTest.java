@@ -13,7 +13,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import com.example.batch.Domain.BatchSchedule;
 import com.example.batch.Service.BatchScheduleServiceTest;
 
-class BatchUnitTests {
+class BatchUnitTest {
 
 	private Logger log = LoggerFactory.getLogger(this.getClass());
 	

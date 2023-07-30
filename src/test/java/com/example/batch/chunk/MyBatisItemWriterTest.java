@@ -20,6 +20,6 @@ public class MyBatisItemWriterTest implements ItemWriter<List<Goods>>{
 	@Override
 	public void write(List<? extends List<Goods>> items){
 		// 각 item 순회하며 insert(각 chunk가 끝날 때마다 DB에 적재)
-		log.get().info("########## Step finished #######");
+		log.get().info("########## NotInsert Step finished #######");
 	}
 }

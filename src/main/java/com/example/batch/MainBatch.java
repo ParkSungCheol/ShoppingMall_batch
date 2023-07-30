@@ -136,7 +136,6 @@ public class MainBatch {
 					.addLong("time", System.currentTimeMillis()).toJobParameters();
 			try {
 				JobExecution execution = jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
-				Thread.currentThread().sleep(90000);
 				while(i == batchSchedules.size() - 1 || (i+1) % MAX_THREADS == 0) {
     				if(execution.getStatus() == BatchStatus.COMPLETED) break;
     				else {
@@ -145,6 +144,7 @@ public class MainBatch {
     					log.get().info("execution.getStatus() : {}", execution.getStatus());
     				}
     			}
+				Thread.currentThread().sleep(90000);
 			} catch (Exception e) {
 				e.printStackTrace();
 				// 오류 발생시 SpringApplication 종료
