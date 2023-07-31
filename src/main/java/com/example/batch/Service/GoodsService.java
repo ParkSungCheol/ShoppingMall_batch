@@ -1,6 +1,8 @@
 package com.example.batch.Service;
 
 import java.util.List;
+
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
@@ -22,5 +24,9 @@ public class GoodsService {
     
     public void deleteGoodsList() {
     	goodsMapper.deleteGoodsList();
+    }
+    
+    public void deleteGoodsListByProductCode(String productCode) {
+    	goodsMapper.deleteGoodsListByProductCode(productCode);
     }
 }

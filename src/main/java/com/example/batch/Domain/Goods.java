@@ -36,6 +36,14 @@ public class Goods {
 	private String product_code;
 	@JsonProperty
 	private String insertion_date;
+	@JsonProperty
+	private Integer is_deleted;
+	public Integer getIs_deleted() {
+		return is_deleted;
+	}
+	public void setIs_deleted(Integer is_deleted) {
+		this.is_deleted = is_deleted;
+	}
 	public int getId() {
 		return id;
 	}

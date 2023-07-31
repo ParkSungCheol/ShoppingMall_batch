@@ -15,6 +15,7 @@
 			, detail
 			, product_code
 			, insertion_date
+			, is_deleted
 	    ) VALUES 
 	    <foreach collection="goodsList" item="Goods" separator=",">
 	    (
@@ -29,6 +30,12 @@
 	        , #{Goods.detail}
 	        , #{Goods.product_code}
 	        , #{Goods.insertion_date}
+	        <if test='Goods != null and Goods.getIs_deleted() != null'>
+                ,#{Goods.is_deleted}
+            </if>
+            <if test='Goods == null or Goods.getIs_deleted() == null'>
+                ,0
+            </if>
 	    )
 	    </foreach>
 	    ON DUPLICATE KEY UPDATE
@@ -37,10 +44,19 @@
 	    deliveryfee = values(deliveryfee),
 	    sellid = values(sellid),
 	    image = values(image),
-	    detail = values(detail)
+	    detail = values(detail),
+	    is_deleted = CASE
+	        WHEN VALUES(is_deleted) IS NOT NULL THEN VALUES(is_deleted)
+	        ELSE is_deleted
+	    END,
+	    modification_time = SYSDATE()
 	</insert>
 	
 	<delete id="deleteGoodsList">
 		DELETE FROM goods WHERE is_deleted = 1;
+	</delete>
+	
+	<delete id="deleteGoodsListByProductCode">
+		DELETE FROM goods WHERE product_code = #{productCode};
 	</delete>
 </mapper>

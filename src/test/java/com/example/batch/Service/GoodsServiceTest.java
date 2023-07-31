@@ -23,4 +23,8 @@ public class GoodsServiceTest {
     public void deleteGoodsList() {
     	goodsMapper.deleteGoodsList();
     }
+    
+    public void deleteGoodsListByProductCode(String productCode) {
+    	goodsMapper.deleteGoodsListByProductCode(productCode);
+    }
 }

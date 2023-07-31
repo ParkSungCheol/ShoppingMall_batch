@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class JobCompletionNotificationListenerTest implements JobExecutionListener {
 
     private static CountDownLatch latch = null;
+    private static long MAX_THREADS = 0;
     private ThreadLocal<String> error = new ThreadLocal<>();
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
     	return LoggerFactory.getLogger(this.getClass());
@@ -31,6 +32,7 @@ public class JobCompletionNotificationListenerTest implements JobExecutionListen
 		// CountDownLatch 초기화
         if(latch == null) {
         	latch = new CountDownLatch((int) (long) jobExecution.getJobParameters().getLong("jobCount"));
+        	MAX_THREADS = (long) jobExecution.getJobParameters().getLong("MAX_THREADS");
         }
     }
 
@@ -51,18 +53,28 @@ public class JobCompletionNotificationListenerTest implements JobExecutionListen
     	log.get().info("!!!!!!!!!!!!!jobCount : {}!!!!!!!!!!!!!!!", latch.getCount());
     	
     	assertEquals(jobExecution.getStatus(), BatchStatus.COMPLETED);
-    	jobExecution.setStatus(BatchStatus.UNKNOWN);
     	
+    	while(latch != null && latch.getCount() % MAX_THREADS != 0) {
+    		try {
+				Thread.currentThread().sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				jobExecution.setStatus(BatchStatus.FAILED);
+			}
+    	}
     	// 모든 job이 완료되었다면
-    	if(latch.getCount() == 0) {
+    	if(latch != null && latch.getCount() == 0) {
         	// 모든 쓰레드가 완료될 때까지 대기
             try {
 				latch.await();
 			} catch (InterruptedException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
+				jobExecution.setStatus(BatchStatus.FAILED);
 			}
             latch = null;
     	}
+    	jobExecution.setStatus(BatchStatus.UNKNOWN);
     }
 }

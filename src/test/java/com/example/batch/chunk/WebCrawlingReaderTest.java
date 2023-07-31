@@ -41,11 +41,12 @@ public class WebCrawlingReaderTest implements ItemReader<List<Goods>>, StepExecu
 		log.get().info("############ BatchName : {} ##############", BatchSchedule.get().getBatchName());
 		for(int i = 0; i < forNum; i++) {
 			Goods goods = new Goods();
-			goods.setName("IntegrationTest");
+			goods.setName("IntegrationTest_3");
 			goods.setPrice(0);
-			goods.setSellid("TEST");
-			goods.setProduct_code("TEST");
-			goods.setInsertion_date("2023-07-30");
+			goods.setSellid("TEST_3");
+			goods.setProduct_code("TEST_3");
+			goods.setInsertion_date("2023-07-31");
+			goods.setIs_deleted(1);
 			list.add(goods);
 		}
 		executed.set(!executed.get());
