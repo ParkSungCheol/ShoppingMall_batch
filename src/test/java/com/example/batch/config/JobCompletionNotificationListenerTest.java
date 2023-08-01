@@ -62,7 +62,7 @@ public class JobCompletionNotificationListenerTest implements JobExecutionListen
 		}
     	
     	// jobExecution이 COMPLETED 상태가 아닌 경우에만 ExitStatus를 FAILED로 설정
-    	if (!jobExecution.getStatus().equals(BatchStatus.FAILED)) {
+    	if (!jobExecution.getStatus().equals(BatchStatus.COMPLETED)) {
     	    jobExecution.setExitStatus(ExitStatus.FAILED);
     	}
     	else if(jobExecution.getExitStatus().equals(ExitStatus.UNKNOWN)) jobExecution.setExitStatus(ExitStatus.COMPLETED);
