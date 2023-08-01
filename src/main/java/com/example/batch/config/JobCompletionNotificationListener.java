@@ -7,15 +7,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+import java.util.concurrent.CountDownLatch;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.task.TaskExecutor;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import com.example.batch.Domain.JobStatus;
 import com.example.batch.Domain.Search;
@@ -32,8 +32,7 @@ import com.example.batch.Service.SlackService;
 public class JobCompletionNotificationListener implements JobExecutionListener {
 
     private Logger log = LoggerFactory.getLogger(this.getClass());
-    private TaskExecutor taskExecutor;
-    private static long jobCount = -1;
+    private static CountDownLatch latch = null;
     private SlackService slackService;
     private static int failedCount = 0;
     private static int successedCount = 0;
@@ -42,8 +41,7 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 	private ElasticsearchService elasticsearchService;
 	private PhoneService phoneService;
     
-    public JobCompletionNotificationListener(DataSource dataSource, TaskExecutor taskExecutor, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
-        this.taskExecutor = taskExecutor;
+    public JobCompletionNotificationListener(DataSource dataSource, BatchScheduleService batchScheduleService, SlackService slackService, JobStatusService jobStatusService, SearchService searchService, ElasticsearchService elasticsearchService, PhoneService phoneService) {
         this.slackService = slackService;
         this.jobStatusService = jobStatusService;
         this.searchService = searchService;
@@ -54,27 +52,20 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
     @Override
     // job 시작 전 호출
     public void beforeJob(JobExecution jobExecution) {
-		// jobCount 초기화
-        if(jobCount == -1) {
-    		long jobCount_param = (long) jobExecution.getJobParameters().getLong("jobCount");
-    		jobCount = jobCount_param;
-    	}
+    	// CountDownLatch 초기화
+        if(latch == null) {
+        	latch = new CountDownLatch((int) (long) jobExecution.getJobParameters().getLong("jobCount"));
+        }
     }
     
     @Override
     // job 종료 후 호출
     public void afterJob(JobExecution jobExecution){
+    	jobExecution.setExitStatus(ExitStatus.UNKNOWN);
+    	
     	// 남은 jobCount
-    	synchronized (this) {
-    		try {
-				Thread.currentThread().sleep(60000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-    		jobCount--;
-    	}
-    	log.info("jobCount : {}", jobCount);
+    	latch.countDown();
+    	log.info("jobCount : {}", latch.getCount());
     	
     	// Slack에 보낼 메시지 작성
     	int flag = 0; // flag == 0은 오류메시지, flag == 1은 정상메시지
@@ -123,57 +114,71 @@ public class JobCompletionNotificationListener implements JobExecutionListener {
 		}
 		// Slack에 메시지 보내기
 		slackService.call(flag, msg);
-		
-    	ThreadPoolTaskExecutor tte = (ThreadPoolTaskExecutor) taskExecutor;
     	
-    	// 모든 job이 완료되었다면
-    	if(jobCount == 0) {
-    		
-    		// 해당 계정의 모든 job이 종료되었음을 DB에 적재
-    		JobStatus jobStatus = new JobStatus();
-    		jobStatus.setBatchId(Integer.parseInt(account));
-    		jobStatusService.endJobStatus(jobStatus);
-    		
-    		List<JobStatus> jobStatusList = jobStatusService.selectPJobStatus();
-    		// 모든 계정의 job이 종료되었다면
-    		if(jobStatusList.size() == 0) {
-    			try {
-    				// 아직 Mysql에 적재된 데이터가 ES에 적재되지 않았을 수 있으므로 최대 10분 wait
-					Thread.currentThread().sleep(600000);
-				} catch (InterruptedException e1) {
-					e1.printStackTrace();
-				}
-    			
-    			// 가격 설정값보다 낮은지 검증 후 핸드폰으로 전송
-    			List<Search> searchList = searchService.selectSearch();
-    			// 시간대를 Asia/Seoul로 설정
-    	        TimeZone seoulTimeZone = TimeZone.getTimeZone("Asia/Seoul");
-    	        TimeZone.setDefault(seoulTimeZone);
-    	        // 현재 날짜를 YYYY-MM-DD 형식으로 가져오기
-    	        LocalDate currentDate = LocalDate.now();
-    	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    	        String formattedDate = currentDate.format(formatter);
-    			for(Search search : searchList) {
-    				List<esGoods> goodsList = elasticsearchService.getDataFromElasticsearch(search, formattedDate);
-    				if(goodsList.size() > 0) {
-    					// 핸드폰으로 전송
-    					try {
-	    					String phoneMsg = search.getSearchValue() + " : 최저가 " + goodsList.get(0).getPrice() + "원 입니다.";
-	    					phoneService.sendMessage(search.getPhone(), phoneMsg);
-    					} catch(Exception e) {
-    						e.printStackTrace();
-    					}
-    				}
+		synchronized (this) {
+			// 모든 job이 완료되었다면
+        	if(latch != null && latch.getCount() == 0) {
+            	// 모든 쓰레드가 완료될 때까지 대기
+                try {
+    				latch.await();
+    			} catch (Exception e1) {
+    				e1.printStackTrace();
+    				jobExecution.setStatus(BatchStatus.FAILED);
     			}
-    		}
-    		log.info("#### ALL job END ####");
-    		
-    		// 그동안 집계한 전체 job의 성공/실패 횟수를 Slack 메시지로 전달
-    		String finalMsg = "All Job Complete\n";
-    		finalMsg += "Failed : " + failedCount + "\n";
-    		finalMsg += "Successed : " + successedCount;
-    		slackService.call(1, finalMsg);
+                latch = null;
+	    		
+	    		// 해당 계정의 모든 job이 종료되었음을 DB에 적재
+	    		JobStatus jobStatus = new JobStatus();
+	    		jobStatus.setBatchId(Integer.parseInt(account));
+	    		jobStatusService.endJobStatus(jobStatus);
+	    		
+	    		List<JobStatus> jobStatusList = jobStatusService.selectPJobStatus();
+	    		// 모든 계정의 job이 종료되었다면
+	    		if(jobStatusList.size() == 0) {
+	    			try {
+	    				// 아직 Mysql에 적재된 데이터가 ES에 적재되지 않았을 수 있으므로 최대 10분 wait
+						Thread.currentThread().sleep(600000);
+					} catch (InterruptedException e1) {
+						e1.printStackTrace();
+					}
+	    			
+	    			// 가격 설정값보다 낮은지 검증 후 핸드폰으로 전송
+	    			List<Search> searchList = searchService.selectSearch();
+	    			// 시간대를 Asia/Seoul로 설정
+	    	        TimeZone seoulTimeZone = TimeZone.getTimeZone("Asia/Seoul");
+	    	        TimeZone.setDefault(seoulTimeZone);
+	    	        // 현재 날짜를 YYYY-MM-DD 형식으로 가져오기
+	    	        LocalDate currentDate = LocalDate.now();
+	    	        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+	    	        String formattedDate = currentDate.format(formatter);
+	    			for(Search search : searchList) {
+	    				List<esGoods> goodsList = elasticsearchService.getDataFromElasticsearch(search, formattedDate);
+	    				if(goodsList.size() > 0) {
+	    					// 핸드폰으로 전송
+	    					try {
+		    					String phoneMsg = search.getSearchValue() + " : 최저가 " + goodsList.get(0).getPrice() + "원 입니다.";
+		    					phoneService.sendMessage(search.getPhone(), phoneMsg);
+	    					} catch(Exception e) {
+	    						e.printStackTrace();
+	    					}
+	    				}
+	    			}
+	    		}
+	    		log.info("#### ALL job END ####");
+	    		
+	    		// 그동안 집계한 전체 job의 성공/실패 횟수를 Slack 메시지로 전달
+	    		String finalMsg = "All Job Complete\n";
+	    		finalMsg += "Failed : " + failedCount + "\n";
+	    		finalMsg += "Successed : " + successedCount;
+	    		slackService.call(1, finalMsg);
+	    	}
+		}
+		
+		// jobExecution이 COMPLETED 상태가 아닌 경우에만 ExitStatus를 FAILED로 설정
+    	if (!jobExecution.getStatus().equals(BatchStatus.COMPLETED)) {
+    	    jobExecution.setExitStatus(ExitStatus.FAILED);
     	}
+    	else if(jobExecution.getExitStatus().equals(ExitStatus.UNKNOWN)) jobExecution.setExitStatus(ExitStatus.COMPLETED);
     }
     
     public String formatExecutionTime(long executionTime) {

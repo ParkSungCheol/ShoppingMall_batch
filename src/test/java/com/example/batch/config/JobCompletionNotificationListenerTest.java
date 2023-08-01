@@ -5,6 +5,7 @@ import java.util.concurrent.CountDownLatch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobExecutionListener;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +17,9 @@ import org.springframework.stereotype.Component;
 public class JobCompletionNotificationListenerTest implements JobExecutionListener {
 
     private static CountDownLatch latch = null;
-    private static long MAX_THREADS = 0;
-    private ThreadLocal<String> error = new ThreadLocal<>();
 	private ThreadLocal<Logger> log = ThreadLocal.withInitial(() -> {
     	return LoggerFactory.getLogger(this.getClass());
     });
-    
 	@Autowired
     public JobCompletionNotificationListenerTest() {
     }
@@ -32,49 +30,42 @@ public class JobCompletionNotificationListenerTest implements JobExecutionListen
 		// CountDownLatch 초기화
         if(latch == null) {
         	latch = new CountDownLatch((int) (long) jobExecution.getJobParameters().getLong("jobCount"));
-        	MAX_THREADS = (long) jobExecution.getJobParameters().getLong("MAX_THREADS");
         }
     }
 
     @Override
     // job 종료 후 호출
     public void afterJob(JobExecution jobExecution){
+    	jobExecution.setExitStatus(ExitStatus.UNKNOWN);
     	// 남은 jobCount
-    	synchronized (this) {
-    		try {
-				Thread.currentThread().sleep(6000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				jobExecution.setStatus(BatchStatus.FAILED);
-			}
-    		latch.countDown();
-    	}
+    	latch.countDown();
     	log.get().info("!!!!!!!!!!!!!jobCount : {}!!!!!!!!!!!!!!!", latch.getCount());
     	
+    	// jobExecution이 COMPLETED 상태가 아닌 경우에만 ExitStatus를 FAILED로 설정
+    	if (!jobExecution.getStatus().equals(BatchStatus.COMPLETED)) {
+    	    jobExecution.setExitStatus(ExitStatus.FAILED);
+    	}
     	assertEquals(jobExecution.getStatus(), BatchStatus.COMPLETED);
     	
-    	while(latch != null && latch.getCount() % MAX_THREADS != 0) {
-    		try {
-				Thread.currentThread().sleep(1000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				jobExecution.setStatus(BatchStatus.FAILED);
-			}
+    	synchronized (this) {
+    		// 모든 job이 완료되었다면
+        	if(latch != null && latch.getCount() == 0) {
+            	// 모든 쓰레드가 완료될 때까지 대기
+                try {
+    				latch.await();
+    			} catch (Exception e1) {
+    				e1.printStackTrace();
+    				jobExecution.setStatus(BatchStatus.FAILED);
+    			}
+                latch = null;
+        	}
+		}
+    	
+    	// jobExecution이 COMPLETED 상태가 아닌 경우에만 ExitStatus를 FAILED로 설정
+    	if (!jobExecution.getStatus().equals(BatchStatus.COMPLETED)) {
+    	    jobExecution.setExitStatus(ExitStatus.FAILED);
     	}
-    	// 모든 job이 완료되었다면
-    	if(latch != null && latch.getCount() == 0) {
-        	// 모든 쓰레드가 완료될 때까지 대기
-            try {
-				latch.await();
-			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				jobExecution.setStatus(BatchStatus.FAILED);
-			}
-            latch = null;
-    	}
-    	jobExecution.setStatus(BatchStatus.UNKNOWN);
+    	else if(jobExecution.getExitStatus().equals(ExitStatus.UNKNOWN)) jobExecution.setExitStatus(ExitStatus.COMPLETED);
+    	assertEquals(jobExecution.getStatus(), BatchStatus.COMPLETED);
     }
 }

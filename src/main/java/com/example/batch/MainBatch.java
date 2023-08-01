@@ -1,8 +1,10 @@
 package com.example.batch;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -21,7 +23,7 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -54,11 +56,8 @@ public class MainBatch {
 	private static final String INDEX_NAME = "goods";
 	// ES Size
 	private static final int BATCH_SIZE = 800;
-	// 다중쓰레드 수
-	private static final int MAX_THREADS = 4;
 	
 	public MainBatch(ConfigurableApplicationContext givenContext) {
-		// TODO Auto-generated constructor stub
 		context = givenContext;
 		jobLauncher = context.getBean("mainJobLauncher", JobLauncher.class);
 		simpleJobConfiguration = context.getBean(SimpleJobConfiguration.class);
@@ -89,6 +88,7 @@ public class MainBatch {
 		JobStatus jobStatus = new JobStatus();
 		jobStatus.setBatchId(Integer.parseInt(account));
 		jobStatusService.startJobStatus(jobStatus);
+		List<Future<JobExecution>> futures = new ArrayList<>();
 
 		for (int i = 0; i < batchSchedules.size(); i++) {
     		
@@ -134,23 +134,32 @@ public class MainBatch {
 					.addLong("jobCount", (long) batchSchedules.size())
 					// 각 job을 구별할 구분자
 					.addLong("time", System.currentTimeMillis()).toJobParameters();
-			try {
-				JobExecution execution = jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
-				while(i == batchSchedules.size() - 1 || (i+1) % MAX_THREADS == 0) {
-    				if(execution.getStatus() == BatchStatus.COMPLETED) break;
-    				else {
-    					Thread.sleep(60000);
-    					log.get().info("i : {}", i);
-    					log.get().info("execution.getStatus() : {}", execution.getStatus());
-    				}
-    			}
-				Thread.currentThread().sleep(90000);
-			} catch (Exception e) {
-				e.printStackTrace();
-				// 오류 발생시 SpringApplication 종료
-				context.close();
-			    System.exit(0);
-			}
+			ExecutorService executorService = taskExecutor.getThreadPoolExecutor();
+			Future<JobExecution> future = executorService.submit(() -> {
+                try {
+                	return jobLauncher.run(simpleJobConfiguration.myJob(), jobParameters);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return null;
+            });
+			futures.add(future);
+        }
+		
+		for (Future<JobExecution> future : futures) {
+			JobExecution execution = null;
+            try {
+                while(true) {
+                	execution = future.get(); // 각 Job의 작업이 완료될 때까지 기다림
+                	if(execution.getExitStatus().equals(ExitStatus.FAILED) || execution.getExitStatus().equals(ExitStatus.COMPLETED)) break;
+                	Thread.currentThread().sleep(1000);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if(execution.getExitStatus().equals(ExitStatus.FAILED)) {
+            	throw new AssertionError("Job 실행 중 예외 발생");
+            }
         }
 		
 		// ThreadPoolTaskExecutor 종료 요청
