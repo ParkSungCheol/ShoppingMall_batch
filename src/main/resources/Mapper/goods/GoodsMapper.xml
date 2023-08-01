@@ -31,10 +31,10 @@
 	        , #{Goods.product_code}
 	        , #{Goods.insertion_date}
 	        <if test='Goods != null and Goods.getIs_deleted() != null'>
-                ,#{Goods.is_deleted}
+                , #{Goods.is_deleted}
             </if>
             <if test='Goods == null or Goods.getIs_deleted() == null'>
-                ,0
+                , 0
             </if>
 	    )
 	    </foreach>

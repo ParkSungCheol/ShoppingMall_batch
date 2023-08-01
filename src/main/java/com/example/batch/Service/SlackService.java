@@ -2,6 +2,7 @@ package com.example.batch.Service;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -60,7 +61,7 @@ public class SlackService {
         dateFormat.setTimeZone(kstTimeZone);
         String kstDateTime = dateFormat.format(currentDate);
         slackAttachment.setFields(
-                List.of(
+        		Arrays.asList(
                         new SlackField().setTitle("Request Time").setValue(kstDateTime)
                 )
         );
