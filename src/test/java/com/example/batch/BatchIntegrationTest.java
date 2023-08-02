@@ -108,7 +108,6 @@ public class BatchIntegrationTest {
 		jobLauncherTestUtils.setJob(jobNotInsert); // 테스트할 Job을 설정합니다.
 		
 		// [ given ]
-		int MAX_THREADS = 4;
 		// 전체 배치대상 검색어리스트 가져온 후
 		List<BatchSchedule> batchSchedules = service.getBatchScheduleList(9041, 9048);
 		List<Future<JobExecution>> futures = new ArrayList<>();
@@ -153,7 +152,6 @@ public class BatchIntegrationTest {
                     .addString("account",  account)
                     // 추후 모든 job이 완료되었는지를 판별할 때 사용할 전체 job 개수
                     .addLong("jobCount", (long) batchSchedules.size())
-                    .addLong("MAX_THREADS", (long) MAX_THREADS)
                     // 각 job을 구별할 구분자
                     .addLong("time", System.currentTimeMillis())
                     .toJobParameters();
@@ -198,7 +196,6 @@ public class BatchIntegrationTest {
 		jobLauncherTestUtils.setJob(jobNotInsert); // 테스트할 Job을 설정합니다.
 				
 		// [ given ]
-		int MAX_THREADS = 4;
 		// 전체 배치대상 검색어리스트 가져온 후
 		List<BatchSchedule> batchSchedules = DBservice.getBatchScheduleList(9041, 9048);
 		List<Future<JobExecution>> futures = new ArrayList<>();
@@ -243,7 +240,6 @@ public class BatchIntegrationTest {
                     .addString("account",  account)
                     // 추후 모든 job이 완료되었는지를 판별할 때 사용할 전체 job 개수
                     .addLong("jobCount", (long) batchSchedules.size())
-                    .addLong("MAX_THREADS", (long) MAX_THREADS)
                     // 각 job을 구별할 구분자
                     .addLong("time", System.currentTimeMillis())
                     .toJobParameters();
@@ -288,7 +284,6 @@ public class BatchIntegrationTest {
 		jobLauncherTestUtils.setJob(jobInsert); // 테스트할 Job을 설정합니다.
 		
 		// [ given ]
-		int MAX_THREADS = 4;
 		// 전체 배치대상 검색어리스트 가져온 후
 		List<BatchSchedule> batchSchedules = service.getBatchScheduleList(9041, 9048);
 		List<Future<JobExecution>> futures = new ArrayList<>();
@@ -333,7 +328,6 @@ public class BatchIntegrationTest {
                     .addString("account",  account)
                     // 추후 모든 job이 완료되었는지를 판별할 때 사용할 전체 job 개수
                     .addLong("jobCount", (long) batchSchedules.size())
-                    .addLong("MAX_THREADS", (long) MAX_THREADS)
                     // 각 job을 구별할 구분자
                     .addLong("time", System.currentTimeMillis())
                     .toJobParameters();
