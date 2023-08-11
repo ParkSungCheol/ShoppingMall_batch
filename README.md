@@ -78,6 +78,8 @@
 ------------
 ### 프로젝트 주소 및 스크린샷을 첨부해주세요.
 + **주소 : https://www.juroSpring.o-r.kr**
++ 블로그
+  + https://believeme.tistory.com/entry/11%EB%B2%88%EA%B0%80-%EC%87%BC%ED%95%91%EB%8D%B0%EC%9D%B4%ED%84%B0-%ED%99%9C%EC%9A%A9%EC%84%9C%EB%B9%84%EC%8A%A4
 + 스크린샷
   + 검색화면
     <img width="901" alt="화면 캡처 2023-07-12 172721" src="https://github.com/ParkSungCheol/ShoppingMall_vue/assets/93702296/6beb4687-8c34-4db0-85fd-f66d3fbf69a0">
